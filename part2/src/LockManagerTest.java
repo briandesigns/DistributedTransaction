@@ -38,8 +38,8 @@ class MyThread extends Thread {
             }
 
             try {
-                lm.Lock(1, "b", LockManager.WRITE);
-                System.out.println("thread1 requested WRITE lock on b");
+                lm.Lock(1, "a", LockManager.WRITE);
+                System.out.println("thread1 requested WRITE lock on a");
             } catch (DeadlockException e) {
                 System.out.println("Deadlock.... ");
             }
@@ -47,25 +47,25 @@ class MyThread extends Thread {
             lm.UnlockAll(1);
         } else if (threadId == 2) {
             try {
-                lm.Lock(2, "b", LockManager.READ);
-                System.out.println("thread2 requested READ lock on b");
+                lm.Lock(2, "a", LockManager.READ);
+                System.out.println("thread2 requested READ lock on a");
             } catch (DeadlockException e) {
                 System.out.println("Deadlock.... ");
             }
 
             try {
-                this.sleep(1000);
+                this.sleep(100000000);
             } catch (InterruptedException e) {
             }
+//
+//            try {
+//                lm.Lock(2, "a", LockManager.WRITE);
+//                System.out.println("thread2 requested WRITE lock on a");
+//            } catch (DeadlockException e) {
+//                System.out.println("Deadlock.... ");
+//            }
 
-            try {
-                lm.Lock(2, "a", LockManager.WRITE);
-                System.out.println("thread2 requested WRITE lock on a");
-            } catch (DeadlockException e) {
-                System.out.println("Deadlock.... ");
-            }
-
-            lm.UnlockAll(2);
+//            lm.UnlockAll(2);
         }
     }
 }

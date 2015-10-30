@@ -1,3 +1,6 @@
+import LockManager.LockManager;
+import TransactionManager.TransactionManager;
+
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -24,6 +27,10 @@ public class TCPServer implements Runnable {
     public static RMHashtable m_itemHT_flight = new RMHashtable();
 
     public static String[] rmAddresses;
+
+    public static LockManager lm;
+    public static TransactionManager tm;
+
 
 
     public TCPServer(int port, String serverType) {

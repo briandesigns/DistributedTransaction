@@ -1,5 +1,8 @@
 package LockManager;
 
+/**
+ * parent object
+ */
 public class XObj {
     protected int xid = 0;
 
@@ -27,6 +30,9 @@ public class XObj {
         return this.xid;
     }
 
+    /**
+     * @return return the objects Xid as hashcode
+     */
     public int hashCode() {
         return this.xid;
     }
@@ -52,6 +58,9 @@ public class XObj {
         }
     }
 
+    /**
+     * @return their Xid as key
+     */
     public int key() {
         return this.xid;
     }

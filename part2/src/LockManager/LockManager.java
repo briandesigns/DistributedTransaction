@@ -1,8 +1,14 @@
 package LockManager;
 
+import javax.xml.crypto.Data;
 import java.util.BitSet;
 import java.util.Vector;
 
+/**
+ * Lock manager that handles all data locking in the system
+ * exposes lock(),unlockAll() operations
+ * holds 3 hash table necessary to keep track of locks
+ */
 public class LockManager {
     public static final int READ = 0;
     public static final int WRITE = 1;
@@ -20,7 +26,7 @@ public class LockManager {
 
     public boolean Lock(int xid, String strData, int lockType) throws DeadlockException {
 
-        // if any parameter is invalid, then return false
+        // if any p`arameter is invalid, then return false
         if (xid < 0) {
             return false;
         }
@@ -40,11 +46,11 @@ public class LockManager {
         // return true when there is no lock conflict or throw a deadlock exception.
         try {
             boolean bConflict = true;
-            BitSet bConvert = new BitSet(1);
+            BitSet bConvert = new BitSet(1); //BitSet are initialized to false
             while (bConflict) {
                 synchronized (this.lockTable) {
                     // check if this lock request conflicts with existing locks
-                    bConflict = LockConflict(dataObj, bConvert);
+                    bConflict = LockConflict(dataObj, bConvert); //if this returned true, you will be stuck in the while loop
                     if (!bConflict) {
                         // no lock conflict
                         synchronized (this.stampTable) {
@@ -61,8 +67,39 @@ public class LockManager {
 
                         if (bConvert.get(0) == true) {
                             // lock conversion 
-                            // *** ADD CODE HERE *** to carry out the lock conversion in the
-                            // lock table
+                            // *** ADD CODE HERE *** to carry out the lock conversion in the lock table
+
+
+
+//                            TrxnObj trxnObj1 = (TrxnObj) trxnObj.clone();
+//                            trxnObj1.setLockType(LockManager.READ);
+//                            //todo: does this actually remove it?
+//                            lockTable.remove(trxnObj1);
+//                            lockTable.add(trxnObj);
+//
+//                            DataObj dataObj1 = (DataObj) dataObj.clone();
+//                            dataObj1.setLockType(LockManager.READ);
+//                            //todo: does this actually remove it?
+//                            lockTable.remove(dataObj1);
+//                            lockTable.add(dataObj);
+                            System.out.println("got here");
+                            Vector vect = this.lockTable.elements(dataObj);
+                            for(int i = 0; i<vect.size(); i++) {
+                                DataObj dataObj1 = (DataObj)(vect.elementAt(i));
+                                if(dataObj1.getXId()==dataObj.getXId()) {
+                                    dataObj1.setLockType(LockManager.WRITE);
+                                }
+                            }
+
+                            vect = this.lockTable.elements(trxnObj);
+                            for(int i = 0; i<vect.size(); i++) {
+                                TrxnObj trxnObj1 = (TrxnObj) (vect.elementAt(i));
+                                if(trxnObj1.getDataName().equals(trxnObj.getDataName())) {
+                                    trxnObj1.setLockType(LockManager.WRITE);
+                                }
+                            }
+
+
                         } else {
                             // a lock request that is not lock conversion
                             this.lockTable.add(trxnObj);
@@ -194,7 +231,13 @@ public class LockManager {
                     // transaction already has a lock and is requesting a WRITE lock
                     // now there are two cases to analyze here
                     // (1) transaction already had a READ lock
+                    if (dataObj2.getLockType() == LockManager.READ) {
+                        bitset.set(0, true);
+                    } else {
+                        throw new RedundantLockRequestException(dataObj.getXId(), "Redudndant WRITE lock request");
+                    }
                     // (2) transaction already had a WRITE lock
+
                     // Seeing the comments at the top of this function might be helpful
                     // *** ADD CODE HERE *** to take care of both these cases
                 }

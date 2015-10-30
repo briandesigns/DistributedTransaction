@@ -13,6 +13,10 @@ public class TPHashTable {
     private Vector vect;
     private int iSize;    // size of the hash table
 
+    /**
+     * creates a vector(size: iSize) of vectors(size 8)
+     * @param iSize
+     */
     TPHashTable(int iSize) {
         this.iSize = iSize;
 
@@ -26,6 +30,10 @@ public class TPHashTable {
         return iSize;
     }
 
+    /**
+     * append the Xobj to the vector in vectorslot of Vect corresponding to the Xobj's Xid
+     * @param xobj xobj to be added to the hashtable
+     */
     public synchronized void add(XObj xobj) {
         if (xobj == null) return;
 
@@ -39,6 +47,11 @@ public class TPHashTable {
         vectSlot.addElement(xobj);
     }
 
+    /**
+     *
+     * @param xobj
+     * @return
+     */
     public synchronized Vector elements(XObj xobj) {
         if (xobj == null) return (new Vector());
 
@@ -63,6 +76,11 @@ public class TPHashTable {
         return elemVect;
     }
 
+    /**
+     * check if vect contain xObj based on Vector.contains() which checks objectID and not XId
+     * @param xobj
+     * @return
+     */
     public synchronized boolean contains(XObj xobj) {
         if (xobj == null) return false;
 
@@ -77,6 +95,12 @@ public class TPHashTable {
         return vectSlot.contains(xobj);
     }
 
+    /**
+     * remove xobj based on Object ID
+     * @param xobj
+     * @return
+     */
+    //todo: remove based on Xid only?
     public synchronized boolean remove(XObj xobj) {
         if (xobj == null) return false;
 
@@ -91,6 +115,10 @@ public class TPHashTable {
         return vectSlot.removeElement(xobj);
     }
 
+    /**
+     * @param xobj
+     * @return the XObj based on Object ID if it exist in Vect, null if it does not
+     */
     public synchronized XObj get(XObj xobj) {
         if (xobj == null) return null;
 
