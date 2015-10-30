@@ -1,6 +1,8 @@
 import LockManager.*;
 
-
+/**
+ * starts 2 Threads which repeatedly request for lock on items and unlocking them
+ */
 class LockManagerTest {
     public static void main(String[] args) {
         MyThread t1, t2;
@@ -25,6 +27,7 @@ class MyThread extends Thread {
         if (threadId == 1) {
             try {
                 lm.Lock(1, "a", LockManager.READ);
+                System.out.println("thread1 requested READ lock on a");
             } catch (DeadlockException e) {
                 System.out.println("Deadlock.... ");
             }
@@ -36,6 +39,7 @@ class MyThread extends Thread {
 
             try {
                 lm.Lock(1, "b", LockManager.WRITE);
+                System.out.println("thread1 requested WRITE lock on b");
             } catch (DeadlockException e) {
                 System.out.println("Deadlock.... ");
             }
@@ -44,6 +48,7 @@ class MyThread extends Thread {
         } else if (threadId == 2) {
             try {
                 lm.Lock(2, "b", LockManager.READ);
+                System.out.println("thread2 requested READ lock on b");
             } catch (DeadlockException e) {
                 System.out.println("Deadlock.... ");
             }
@@ -55,6 +60,7 @@ class MyThread extends Thread {
 
             try {
                 lm.Lock(2, "a", LockManager.WRITE);
+                System.out.println("thread2 requested WRITE lock on a");
             } catch (DeadlockException e) {
                 System.out.println("Deadlock.... ");
             }
