@@ -1,12 +1,12 @@
-// -------------------------------
+package ResourceManager;// -------------------------------
 // Adapted from Kevin T. Manley
 // CSE 593
 // -------------------------------
 
 
-// Represents a customer's "reserved item" (e.g. Flight, Car, or Room).
+// Represents a customer's "reserved item" (e.g. ResourceManager.Flight, ResourceManager.Car, or ResourceManager.Room).
 // Note: if a customer reserves more than one item of the same kind, this is 
-// stored as a single instance of ReservedItem reflecting the *latest price*.
+// stored as a single instance of ResourceManager.ReservedItem reflecting the *latest price*.
 
 public class ReservedItem extends RMItem {
 
@@ -53,7 +53,7 @@ public class ReservedItem extends RMItem {
                 + "count = " + getCount() + ", price = " + getPrice(); 
     }
 
-    // Note: hashKey is the same as the ReservableItem hashkey.  This would 
+    // Note: hashKey is the same as the ResourceManager.ReservableItem hashkey.  This would
     // have to change if we weren't lumping all reservable items under the 
     // same price.
     public String getKey() {

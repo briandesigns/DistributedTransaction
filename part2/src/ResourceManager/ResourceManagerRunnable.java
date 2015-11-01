@@ -1,3 +1,7 @@
+package ResourceManager;
+
+import TransactionManager.TransactionManager;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -15,6 +19,8 @@ public class ResourceManagerRunnable implements Runnable, ResourceManager {
     PrintWriter toClient;
     BufferedReader fromClient;
     RMHashtable hashTable;
+    TransactionManager tm;
+
 
     public ResourceManagerRunnable(Socket clientSocket, String serverType) {
         this.clientSocket = clientSocket;
@@ -303,7 +309,7 @@ public class ResourceManagerRunnable implements Runnable, ResourceManager {
     }
 
 
-    // Basic operations on RMItem //
+    // Basic operations on ResourceManager.RMItem //
 
     // Read a data item.
     private RMItem readData(int id, String key) {
@@ -327,7 +333,7 @@ public class ResourceManagerRunnable implements Runnable, ResourceManager {
     }
 
 
-    // Basic operations on ReservableItem //
+    // Basic operations on ResourceManager.ReservableItem //
 
     // Delete the entire item.
     protected boolean deleteItem(int id, String key) {
@@ -401,7 +407,7 @@ public class ResourceManagerRunnable implements Runnable, ResourceManager {
         }
     }
 
-    // Flight operations //
+    // ResourceManager.Flight operations //
 
     // Create a new flight, or add seats to existing flight.
     // Note: if flightPrice <= 0 and the flight already exists, it maintains
@@ -424,6 +430,7 @@ public class ResourceManagerRunnable implements Runnable, ResourceManager {
             if (flightPrice > 0) {
                 curObj.setPrice(flightPrice);
             }
+            //the line below should be redundant
             writeData(id, curObj.getKey(), curObj);
             Trace.info("RM::addFlight(" + id + ", " + flightNumber
                     + ", $" + flightPrice + ", " + numSeats + ") OK: "
@@ -451,41 +458,41 @@ public class ResourceManagerRunnable implements Runnable, ResourceManager {
     /*
     // Returns the number of reservations for this flight.
     public int queryFlightReservations(int id, int flightNumber) {
-        Trace.info("RM::queryFlightReservations(" + id
+        ResourceManager.Trace.info("RM::queryFlightReservations(" + id
                 + ", #" + flightNumber + ") called.");
-        RMInteger numReservations = (RMInteger) readData(id,
-                Flight.getNumReservationsKey(flightNumber));
+        ResourceManager.RMInteger numReservations = (ResourceManager.RMInteger) readData(id,
+                ResourceManager.Flight.getNumReservationsKey(flightNumber));
         if (numReservations == null) {
-            numReservations = new RMInteger(0);
+            numReservations = new ResourceManager.RMInteger(0);
        }
-        Trace.info("RM::queryFlightReservations(" + id +
+        ResourceManager.Trace.info("RM::queryFlightReservations(" + id +
                 ", #" + flightNumber + ") = " + numReservations);
         return numReservations.getValue();
     }
     */
 
     /*
-    // Frees flight reservation record. Flight reservation records help us
+    // Frees flight reservation record. ResourceManager.Flight reservation records help us
     // make sure we don't delete a flight if one or more customers are
     // holding reservations.
     public boolean freeFlightReservation(int id, int flightNumber) {
-        Trace.info("RM::freeFlightReservations(" + id + ", "
+        ResourceManager.Trace.info("RM::freeFlightReservations(" + id + ", "
                 + flightNumber + ") called.");
-        RMInteger numReservations = (RMInteger) readData(id,
-                Flight.getNumReservationsKey(flightNumber));
+        ResourceManager.RMInteger numReservations = (ResourceManager.RMInteger) readData(id,
+                ResourceManager.Flight.getNumReservationsKey(flightNumber));
         if (numReservations != null) {
-            numReservations = new RMInteger(
+            numReservations = new ResourceManager.RMInteger(
                     Math.max(0, numReservations.getValue() - 1));
         }
-        writeData(id, Flight.getNumReservationsKey(flightNumber), numReservations);
-        Trace.info("RM::freeFlightReservations(" + id + ", "
+        writeData(id, ResourceManager.Flight.getNumReservationsKey(flightNumber), numReservations);
+        ResourceManager.Trace.info("RM::freeFlightReservations(" + id + ", "
                 + flightNumber + ") OK: reservations = " + numReservations);
         return true;
     }
     */
 
 
-    // Car operations //
+    // ResourceManager.Car operations //
 
     // Create a new car location or add cars to an existing location.
     // Note: if price <= 0 and the car location already exists, it maintains
@@ -534,7 +541,7 @@ public class ResourceManagerRunnable implements Runnable, ResourceManager {
     }
 
 
-    // Room operations //
+    // ResourceManager.Room operations //
 
     // Create a new room location or add rooms to an existing location.
     // Note: if price <= 0 and the room location already exists, it maintains
@@ -583,7 +590,7 @@ public class ResourceManagerRunnable implements Runnable, ResourceManager {
     }
 
 
-    // Customer operations //
+    // ResourceManager.Customer operations //
 
     @Override
     public int newCustomer(int id) {
@@ -651,7 +658,7 @@ public class ResourceManagerRunnable implements Runnable, ResourceManager {
 
     // Return data structure containing customer reservation info.
     // Returns null if the customer doesn't exist.
-    // Returns empty RMHashtable if customer exists but has no reservations.
+    // Returns empty ResourceManager.RMHashtable if customer exists but has no reservations.
     public RMHashtable getCustomerReservations(int id, int customerId) {
         Trace.info("RM::getCustomerReservations(" + id + ", "
                 + customerId + ") called.");

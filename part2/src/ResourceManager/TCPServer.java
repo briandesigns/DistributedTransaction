@@ -1,5 +1,6 @@
+package ResourceManager;
+
 import LockManager.LockManager;
-import TransactionManager.TransactionManager;
 
 import java.io.*;
 import java.net.ServerSocket;
@@ -26,10 +27,10 @@ public class TCPServer implements Runnable {
     public static RMHashtable m_itemHT_room = new RMHashtable();
     public static RMHashtable m_itemHT_flight = new RMHashtable();
 
+
     public static String[] rmAddresses;
 
     public static LockManager lm;
-    public static TransactionManager tm;
 
 
 
@@ -72,7 +73,7 @@ public class TCPServer implements Runnable {
             this.runningThread = Thread.currentThread();
         }
         openServerSocket();
-        Trace.info(this.serverType + " TCPServer running on port " + this.serverPort);
+        Trace.info(this.serverType + " ResourceManager.TCPServer running on port " + this.serverPort);
         listenForClient();
     }
 

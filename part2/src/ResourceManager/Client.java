@@ -1,4 +1,4 @@
-
+package ResourceManager;
 
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -32,7 +32,7 @@ public class Client {
         try {
 
             if (args.length != 2) {
-                System.out.println("Usage: Client <mwHost> <mwPort>");
+                System.out.println("Usage: ResourceManager.Client <mwHost> <mwPort>");
                 System.exit(-1);
             }
 
@@ -67,7 +67,7 @@ public class Client {
         BufferedReader stdin =
                 new BufferedReader(new InputStreamReader(System.in));
 
-        System.out.println("Client Interface");
+        System.out.println("ResourceManager.Client Interface");
         System.out.println("Type \"help\" for list of supported commands");
 
         while (true) {
@@ -105,10 +105,10 @@ public class Client {
                         wrongNumber();
                         break;
                     }
-                    System.out.println("Adding a new Flight using id: " + arguments.elementAt(1));
-                    System.out.println("Flight number: " + arguments.elementAt(2));
-                    System.out.println("Add Flight Seats: " + arguments.elementAt(3));
-                    System.out.println("Set Flight Price: " + arguments.elementAt(4));
+                    System.out.println("Adding a new ResourceManager.Flight using id: " + arguments.elementAt(1));
+                    System.out.println("ResourceManager.Flight number: " + arguments.elementAt(2));
+                    System.out.println("Add ResourceManager.Flight Seats: " + arguments.elementAt(3));
+                    System.out.println("Set ResourceManager.Flight Price: " + arguments.elementAt(4));
 
                     try {
                         id = getInt(arguments.elementAt(1));
@@ -179,12 +179,12 @@ public class Client {
                     }
                     break;
 
-                case 5:  //new Customer
+                case 5:  //new ResourceManager.Customer
                     if (arguments.size() != 2) {
                         wrongNumber();
                         break;
                     }
-                    System.out.println("Adding a new Customer using id: " + arguments.elementAt(1));
+                    System.out.println("Adding a new ResourceManager.Customer using id: " + arguments.elementAt(1));
                     try {
                         id = getInt(arguments.elementAt(1));
                         toMW.println("newCustomer,"+id);
@@ -197,13 +197,13 @@ public class Client {
                     }
                     break;
 
-                case 6: //delete Flight
+                case 6: //delete ResourceManager.Flight
                     if (arguments.size() != 3) {
                         wrongNumber();
                         break;
                     }
                     System.out.println("Deleting a flight using id: " + arguments.elementAt(1));
-                    System.out.println("Flight Number: " + arguments.elementAt(2));
+                    System.out.println("ResourceManager.Flight Number: " + arguments.elementAt(2));
                     try {
                         id = getInt(arguments.elementAt(1));
                         flightNumber = getInt(arguments.elementAt(2));
@@ -265,13 +265,13 @@ public class Client {
                     }
                     break;
 
-                case 9: //delete Customer
+                case 9: //delete ResourceManager.Customer
                     if (arguments.size() != 3) {
                         wrongNumber();
                         break;
                     }
                     System.out.println("Deleting a customer from the database using id: " + arguments.elementAt(1));
-                    System.out.println("Customer id: " + arguments.elementAt(2));
+                    System.out.println("ResourceManager.Customer id: " + arguments.elementAt(2));
                     try {
                         id = getInt(arguments.elementAt(1));
                         int customer = getInt(arguments.elementAt(2));
@@ -293,7 +293,7 @@ public class Client {
                         break;
                     }
                     System.out.println("Querying a flight using id: " + arguments.elementAt(1));
-                    System.out.println("Flight number: " + arguments.elementAt(2));
+                    System.out.println("ResourceManager.Flight number: " + arguments.elementAt(2));
                     try {
                         id = getInt(arguments.elementAt(1));
                         flightNumber = getInt(arguments.elementAt(2));
@@ -345,20 +345,20 @@ public class Client {
                     }
                     break;
 
-                case 13: //querying Customer Information
+                case 13: //querying ResourceManager.Customer Information
                     if (arguments.size() != 3) {
                         wrongNumber();
                         break;
                     }
-                    System.out.println("Querying Customer information using id: " + arguments.elementAt(1));
-                    System.out.println("Customer id: " + arguments.elementAt(2));
+                    System.out.println("Querying ResourceManager.Customer information using id: " + arguments.elementAt(1));
+                    System.out.println("ResourceManager.Customer id: " + arguments.elementAt(2));
                     try {
                         id = getInt(arguments.elementAt(1));
                         int customer = getInt(arguments.elementAt(2));
 
                         toMW.println("queryCustomerInfo," +id +","+ customer);
                         String bill = fromMW.readLine();
-                        Trace.info("MW Customer info: " + bill);
+                        Trace.info("MW ResourceManager.Customer info: " + bill);
                     }
                     catch(Exception e) {
                         e.printStackTrace();
@@ -371,7 +371,7 @@ public class Client {
                         break;
                     }
                     System.out.println("Querying a flight Price using id: " + arguments.elementAt(1));
-                    System.out.println("Flight number: " + arguments.elementAt(2));
+                    System.out.println("ResourceManager.Flight number: " + arguments.elementAt(2));
                     try {
                         id = getInt(arguments.elementAt(1));
                         flightNumber = getInt(arguments.elementAt(2));
@@ -429,8 +429,8 @@ public class Client {
                         break;
                     }
                     System.out.println("Reserving a seat on a flight using id: " + arguments.elementAt(1));
-                    System.out.println("Customer id: " + arguments.elementAt(2));
-                    System.out.println("Flight number: " + arguments.elementAt(3));
+                    System.out.println("ResourceManager.Customer id: " + arguments.elementAt(2));
+                    System.out.println("ResourceManager.Flight number: " + arguments.elementAt(3));
                     try {
                         id = getInt(arguments.elementAt(1));
                         int customer = getInt(arguments.elementAt(2));
@@ -452,7 +452,7 @@ public class Client {
                         break;
                     }
                     System.out.println("Reserving a car at a location using id: " + arguments.elementAt(1));
-                    System.out.println("Customer id: " + arguments.elementAt(2));
+                    System.out.println("ResourceManager.Customer id: " + arguments.elementAt(2));
                     System.out.println("Location: " + arguments.elementAt(3));
                     try {
                         id = getInt(arguments.elementAt(1));
@@ -475,7 +475,7 @@ public class Client {
                         break;
                     }
                     System.out.println("Reserving a room at a location using id: " + arguments.elementAt(1));
-                    System.out.println("Customer id: " + arguments.elementAt(2));
+                    System.out.println("ResourceManager.Customer id: " + arguments.elementAt(2));
                     System.out.println("Location: " + arguments.elementAt(3));
                     try {
                         id = getInt(arguments.elementAt(1));
@@ -498,9 +498,9 @@ public class Client {
                         break;
                     }
                     System.out.println("Reserving an Itinerary using id: " + arguments.elementAt(1));
-                    System.out.println("Customer id: " + arguments.elementAt(2));
+                    System.out.println("ResourceManager.Customer id: " + arguments.elementAt(2));
                     for (int i = 0; i<arguments.size()-6; i++)
-                        System.out.println("Flight number" + arguments.elementAt(3 + i));
+                        System.out.println("ResourceManager.Flight number" + arguments.elementAt(3 + i));
                     System.out.println("Location for car/room booking: " + arguments.elementAt(arguments.size()-3));
                     System.out.println("car to book?: " + arguments.elementAt(arguments.size()-2));
                     System.out.println("room to book?: " + arguments.elementAt(arguments.size()-1));
@@ -537,12 +537,12 @@ public class Client {
                     System.out.println("Quitting client.");
                     return;
 
-                case 22:  //new Customer given id
+                case 22:  //new ResourceManager.Customer given id
                     if (arguments.size() != 3) {
                         wrongNumber();
                         break;
                     }
-                    System.out.println("Adding a new Customer using id: "
+                    System.out.println("Adding a new ResourceManager.Customer using id: "
                             + arguments.elementAt(1)  +  " and cid "  + arguments.elementAt(2));
                     try {
                         id = getInt(arguments.elementAt(1));
@@ -652,7 +652,7 @@ public class Client {
                 break;
 
             case 2:  //new flight
-                System.out.println("Adding a new Flight.");
+                System.out.println("Adding a new ResourceManager.Flight.");
                 System.out.println("Purpose: ");
                 System.out.println("\tAdd information about a new flight.");
                 System.out.println("\nUsage: ");
@@ -675,8 +675,8 @@ public class Client {
                 System.out.println("\tnewroom, <id>, <location>, <numberofrooms>, <priceperroom>");
                 break;
 
-            case 5:  //new Customer
-                System.out.println("Adding a new Customer.");
+            case 5:  //new ResourceManager.Customer
+                System.out.println("Adding a new ResourceManager.Customer.");
                 System.out.println("Purpose: ");
                 System.out.println("\tGet the system to provide a new customer id. (same as adding a new customer)");
                 System.out.println("\nUsage: ");
@@ -684,7 +684,7 @@ public class Client {
                 break;
 
 
-            case 6: //delete Flight
+            case 6: //delete ResourceManager.Flight
                 System.out.println("Deleting a flight");
                 System.out.println("Purpose: ");
                 System.out.println("\tDelete a flight's information.");
@@ -708,8 +708,8 @@ public class Client {
                 System.out.println("\tdeleteroom, <id>, <location>, <numRooms>");
                 break;
 
-            case 9: //delete Customer
-                System.out.println("Deleting a Customer");
+            case 9: //delete ResourceManager.Customer
+                System.out.println("Deleting a ResourceManager.Customer");
                 System.out.println("Purpose: ");
                 System.out.println("\tRemove a customer from the database.");
                 System.out.println("\nUsage: ");
@@ -740,8 +740,8 @@ public class Client {
                 System.out.println("\tqueryroom, <id>, <location>");
                 break;
 
-            case 13: //querying Customer Information
-                System.out.println("Querying Customer Information.");
+            case 13: //querying ResourceManager.Customer Information
+                System.out.println("Querying ResourceManager.Customer Information.");
                 System.out.println("Purpose: ");
                 System.out.println("\tObtain information about a customer.");
                 System.out.println("\nUsage: ");

@@ -1,3 +1,5 @@
+package ResourceManager;
+
 import LockManager.*;
 
 /**

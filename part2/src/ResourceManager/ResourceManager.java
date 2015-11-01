@@ -1,4 +1,4 @@
-/**
+package ResourceManager; /**
  * Simplified version from CSE 593, University of Washington.
  *
  * A Distributed System in Java using Web Services.
@@ -21,7 +21,7 @@ import java.util.*;
 
 public interface ResourceManager {
 
-    // Flight operations //
+    // ResourceManager.Flight operations //
 
     /* Add seats to a flight.  
      * In general, this will be used to create a new flight, but it should be 
@@ -48,7 +48,7 @@ public interface ResourceManager {
     public int queryFlightPrice(int id, int flightNumber);
 
 
-    // Car operations //
+    // ResourceManager.Car operations //
 
     /* Add cars to a location.  
      * This should look a lot like addFlight, only keyed on a string location
@@ -68,7 +68,7 @@ public interface ResourceManager {
     public int queryCarsPrice(int id, String location);
 
 
-    // Room operations //
+    // ResourceManager.Room operations //
 
     /* Add rooms to a location.  
      * This should look a lot like addFlight, only keyed on a string location
@@ -88,7 +88,7 @@ public interface ResourceManager {
     public int queryRoomsPrice(int id, String location);
 
 
-    // Customer operations //
+    // ResourceManager.Customer operations //
 
     /* Create a new customer and return their unique identifier. */
     public int newCustomer(int id);
