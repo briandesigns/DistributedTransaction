@@ -28,7 +28,7 @@ import java.util.Vector;
  *
  * itinerary should be just implemented as a transaction itself
  *
- * the list of things taht needs to be executed on abort() should just be a list of commands to feed to run()
+ * the list of things taht needs to be executed on abort() should just be a list of commands to feed to run() of middleware
  */
 public class TransactionManager implements ResourceManager {
     public static RMHashtable transactionTable;
