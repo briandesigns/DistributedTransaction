@@ -1,6 +1,8 @@
 package ResourceManager;
 
 
+import TransactionManager.TransactionManager;
+
 import java.io.*;
 import java.net.*;
 import java.util.Calendar;
@@ -19,9 +21,11 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
     Socket roomSocket = null;
     PrintWriter toCar, toFlight, toRoom, toClient;
     BufferedReader fromCar, fromFlight, fromRoom, fromClient;
+    TransactionManager tm;
 
     public MiddlewareRunnable(Socket clientSocket) {
         this.clientSocket = clientSocket;
+        tm = new TransactionManager(this);
         connectRM();
         setComms();
     }
@@ -76,7 +80,11 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                             toClient.println("ERROR : wrong arguments");
                             break;
                         }
-                        success = addFlight(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]), Integer.parseInt(cmdWords[3]), Integer.parseInt(cmdWords[4]));
+                        if(!tm.isInTransaction()) {
+                            success = addFlight(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]), Integer.parseInt(cmdWords[3]), Integer.parseInt(cmdWords[4]));
+                        }
+                        else
+                            success = tm.addFlight(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]), Integer.parseInt(cmdWords[3]), Integer.parseInt(cmdWords[4]));
                         if (success) {
                             toClient.println("true");
                             Trace.info("RM addFlight successful");
@@ -90,7 +98,9 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                             toClient.println("ERROR : wrong arguments");
                             break;
                         }
-                        success = addCars(Integer.parseInt(cmdWords[1]), cmdWords[2], Integer.parseInt(cmdWords[3]), Integer.parseInt(cmdWords[4]));
+                        if(!tm.isInTransaction())
+                            success = addCars(Integer.parseInt(cmdWords[1]), cmdWords[2], Integer.parseInt(cmdWords[3]), Integer.parseInt(cmdWords[4]));
+                        else success = tm.addCars(Integer.parseInt(cmdWords[1]), cmdWords[2], Integer.parseInt(cmdWords[3]), Integer.parseInt(cmdWords[4]));
                         if (success) toClient.println("true");
                         else toClient.println("false");
                         break;
@@ -99,12 +109,13 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                             toClient.println("ERROR : wrong arguments");
                             break;
                         }
-                        success = addRooms(Integer.parseInt(cmdWords[1]), cmdWords[2], Integer.parseInt(cmdWords[3]), Integer.parseInt(cmdWords[4]));
+                        if(!tm.isInTransaction())
+                            success = addRooms(Integer.parseInt(cmdWords[1]), cmdWords[2], Integer.parseInt(cmdWords[3]), Integer.parseInt(cmdWords[4]));
+                        else success = tm.addRooms(Integer.parseInt(cmdWords[1]), cmdWords[2], Integer.parseInt(cmdWords[3]), Integer.parseInt(cmdWords[4]));
                         if (success) {
                             toClient.println("true");
                         }
                         else {
-
                             toClient.println("false");
                         }
                         break;
@@ -113,7 +124,9 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                             toClient.println("ERROR : wrong arguments");
                             break;
                         }
-                        value = newCustomer(Integer.parseInt(cmdWords[1]));
+                        if(!tm.isInTransaction())
+                            value = newCustomer(Integer.parseInt(cmdWords[1]));
+                        else value = tm.newCustomer(Integer.parseInt(cmdWords[1]));
                         toClient.println(value);
                         break;
                     case 6:
@@ -121,7 +134,9 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                             toClient.println("ERROR : wrong arguments");
                             break;
                         }
-                        success = deleteFlight(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]));
+                        if(!tm.isInTransaction())
+                            success = deleteFlight(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]));
+                        else success = tm.deleteFlight(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]));
                         if (success) toClient.println("true");
                         else toClient.println("false");
 
@@ -131,7 +146,9 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                             toClient.println("ERROR : wrong arguments");
                             break;
                         }
-                        success = deleteCars(Integer.parseInt(cmdWords[1]), cmdWords[2]);
+                        if(!tm.isInTransaction())
+                            success = deleteCars(Integer.parseInt(cmdWords[1]), cmdWords[2]);
+                        else success = tm.deleteCars(Integer.parseInt(cmdWords[1]), cmdWords[2]);
                         if (success) toClient.println("true");
                         else toClient.println("false");
 
@@ -141,7 +158,9 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                             toClient.println("ERROR : wrong arguments");
                             break;
                         }
-                        success = deleteRooms(Integer.parseInt(cmdWords[1]), cmdWords[2]);
+                        if(!tm.isInTransaction())
+                            success = deleteRooms(Integer.parseInt(cmdWords[1]), cmdWords[2]);
+                        else success = tm.deleteRooms(Integer.parseInt(cmdWords[1]), cmdWords[2]);
                         if (success) toClient.println("true");
                         else toClient.println("false");
 
@@ -151,7 +170,9 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                             toClient.println("ERROR : wrong arguments");
                             break;
                         }
-                        success = deleteCustomer(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]));
+                        if(!tm.isInTransaction())
+                            success = deleteCustomer(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]));
+                        else success = tm.deleteCustomer(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]));
                         if (success) toClient.println("true");
                         else toClient.println("false");
                         break;
@@ -160,7 +181,9 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                             toClient.println("ERROR : wrong arguments");
                             break;
                         }
-                        value= queryFlight(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]));
+                        if (!tm.isInTransaction())
+                            value = queryFlight(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]));
+                        else value = tm.queryFlight(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]));
                         toClient.println(value);
                         break;
                     case 11:
@@ -168,7 +191,9 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                             toClient.println("ERROR : wrong arguments");
                             break;
                         }
-                        value= queryCars(Integer.parseInt(cmdWords[1]), cmdWords[2]);
+                        if(!tm.isInTransaction())
+                            value = queryCars(Integer.parseInt(cmdWords[1]), cmdWords[2]);
+                        else value = tm.queryCars(Integer.parseInt(cmdWords[1]), cmdWords[2]);
                         toClient.println(value);
                         break;
                     case 12:
@@ -176,7 +201,9 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                             toClient.println("ERROR : wrong arguments");
                             break;
                         }
-                        value= queryRooms(Integer.parseInt(cmdWords[1]), cmdWords[2]);
+                        if(!tm.isInTransaction())
+                            value = queryRooms(Integer.parseInt(cmdWords[1]), cmdWords[2]);
+                        else value = tm.queryRooms(Integer.parseInt(cmdWords[1]), cmdWords[2]);
                         toClient.println(value);
                         break;
                     case 13:
@@ -184,7 +211,9 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                             toClient.println("ERROR : wrong arguments");
                             break;
                         }
-                        stringValue = queryCustomerInfo(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]));
+                        if (!tm.isInTransaction())
+                            stringValue = queryCustomerInfo(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]));
+                        else stringValue = tm.queryCustomerInfo(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]));
                         toClient.println(stringValue);
                         break;
                     case 14:
@@ -192,7 +221,9 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                             toClient.println("ERROR : wrong arguments");
                             break;
                         }
-                        value= queryFlight(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]));
+                        if(!tm.isInTransaction())
+                            value= queryFlight(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]));
+                        else value = tm.queryFlight(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]));
                         toClient.println(value);
                         break;
                     case 15:
@@ -200,7 +231,9 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                             toClient.println("ERROR : wrong arguments");
                             break;
                         }
-                        value= queryCarsPrice(Integer.parseInt(cmdWords[1]), cmdWords[2]);
+                        if(!tm.isInTransaction())
+                            value= queryCarsPrice(Integer.parseInt(cmdWords[1]), cmdWords[2]);
+                        else value = tm.queryCarsPrice(Integer.parseInt(cmdWords[1]), cmdWords[2]);
                         toClient.println(value);
                         break;
                     case 16:
@@ -208,7 +241,9 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                             toClient.println("ERROR : wrong arguments");
                             break;
                         }
-                        value= queryRoomsPrice(Integer.parseInt(cmdWords[1]), cmdWords[2]);
+                        if(!tm.isInTransaction())
+                            value= queryRoomsPrice(Integer.parseInt(cmdWords[1]), cmdWords[2]);
+                        else value = tm.queryRoomsPrice(Integer.parseInt(cmdWords[1]), cmdWords[2]);
                         toClient.println(value);
                         break;
                     case 17:
@@ -218,8 +253,9 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                         }
                         System.out.println(Integer.parseInt(cmdWords[2]));
                         System.out.println(Integer.parseInt(cmdWords[3]));
-
-                        success = reserveFlight(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]), Integer.parseInt(cmdWords[3]));
+                        if (!tm.isInTransaction())
+                            success = reserveFlight(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]), Integer.parseInt(cmdWords[3]));
+                        else success = tm.reserveFlight(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]), Integer.parseInt(cmdWords[3]));
                         if (success) toClient.println("true");
                         else toClient.println("false");
                         break;
@@ -228,7 +264,9 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                             toClient.println("ERROR : wrong arguments");
                             break;
                         }
-                        success = reserveCar(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]), cmdWords[3]);
+                        if (!tm.isInTransaction())
+                            success = reserveCar(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]), cmdWords[3]);
+                        else success = tm.reserveCar(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]), cmdWords[3]);
                         if (success) toClient.println("true");
                         else toClient.println("false");
                         break;
@@ -237,11 +275,14 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                             toClient.println("ERROR : wrong arguments");
                             break;
                         }
-                        success = reserveRoom(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]), cmdWords[3]);
+                        if(!tm.isInTransaction())
+                            success = reserveRoom(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]), cmdWords[3]);
+                        else success = tm.reserveRoom(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]), cmdWords[3]);
                         if (success) toClient.println("true");
                         else toClient.println("false");
                         break;
                     case 20:
+                        //todo: look into this and see if its handled appropriately
                         int numFlights = Integer.parseInt(cmdWords[1]);
                         int id = Integer.parseInt(cmdWords[2]);
                         int customerId = Integer.parseInt(cmdWords[3]);
@@ -252,7 +293,9 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                         String location = cmdWords[3 + numFlights + 1];
                         boolean car = cmdWords[3+numFlights+2].contains("true");
                         boolean room = cmdWords[3 + numFlights + 3].contains("true");
-                        success = reserveItinerary(id, customerId, flightNumbers, location, car, room);
+                        if (!tm.isInTransaction())
+                            success = reserveItinerary(id, customerId, flightNumbers, location, car, room);
+                        else success = tm.reserveItinerary(id, customerId, flightNumbers, location, car, room);
                         if(success) toClient.println("true");
                         else toClient.println("false");
                         break;
@@ -263,8 +306,26 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                             toClient.println("ERROR : wrong arguments");
                             break;
                         }
-                        success = newCustomerId(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]));
+                        if(!tm.isInTransaction())
+                            success = newCustomerId(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]));
+                        else success = tm.newCustomerId(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]));
                         toClient.println(success);
+                        break;
+                    case 23:
+                        if (tm.start()) {
+                            toClient.println("transaction started");
+                        }
+                        else toClient.println("an existing transaction is currently active");
+                        break;
+                    case 24:
+                        if (tm.abort()) {
+                            toClient.println("transaction successfully aborted");
+                        }
+                        break;
+                    case 25:
+                        if (tm.commit()) {
+                            toClient.println("transaction successfully committed");
+                        } else toClient.println("transaction commit error, transaction aborted");
                         break;
                     default:
                         toClient.println("ERROR :  Command " + cmdWords[0] + " not supported");
@@ -273,7 +334,7 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
             }
             toCar.println("END");
             toRoom.println("END");
-            toFlight.println("EnD");
+            toFlight.println("END");
             Trace.info("an end-user client disconnected");
             fromClient.close();
             fromCar.close();
@@ -334,7 +395,13 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
         else if (cmdWords[0].compareToIgnoreCase("END") == 0)
             choice= 21;
         else if (cmdWords[0].compareToIgnoreCase("newcustomerid") == 0)
-            choice=22;
+            choice = 22;
+        else if (cmdWords[0].compareToIgnoreCase("start") == 0)
+            return 23;
+        else if (cmdWords[0].compareToIgnoreCase("abort") == 0)
+            return 24;
+        else if (cmdWords[0].compareToIgnoreCase("commit") == 0)
+            return 25;
         else
             choice=-1;
         return choice;
@@ -496,7 +563,6 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
         }
     }
 
-    //todo: should this delete the reservations on them?
     @Override
     public boolean deleteFlight(int id, int flightNumber) {
         toFlight.println("deleteFlight" + "," + id + "," + flightNumber);
@@ -591,7 +657,6 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
     }
 
     //todo: reserveitineray doesnt work
-    // todo: should this delete all reservations on them as well?
     // Delete cars from a location.
     @Override
     public boolean deleteCars(int id, String location) {
@@ -653,7 +718,6 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
     }
 
     // Delete rooms from a location.
-    // todo: should this delete all reservations on them as well?
     @Override
     public boolean deleteRooms(int id, String location) {
         toRoom.println("deleteRooms" + "," + id + "," + location);

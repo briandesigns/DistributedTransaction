@@ -18,8 +18,8 @@ public class TCPServer implements Runnable {
     boolean isStopped = false;
     Thread runningThread = null;
     public static final String MIDDLEWARE = "MIDDLEWARE";
-    public static final String CAR_RM = "CAR_RM";
     public static final String FLIGHT_RM = "FLIGHT_RM";
+    public static final String CAR_RM = "CAR_RM";
     public static final String ROOM_RM = "ROOM_RM";
 
     public static RMHashtable m_itemHT_customer = new RMHashtable();
@@ -34,10 +34,13 @@ public class TCPServer implements Runnable {
 
 
 
-    public TCPServer(int port, String serverType) {
+    public TCPServer(String serverType, int port) {
         this.serverPort = port;
         this.serverType = serverType;
-        if (serverType.equals(MIDDLEWARE)) readRMAddresses();
+        if (serverType.equals(MIDDLEWARE)) {
+            readRMAddresses();
+            lm = new LockManager();
+        }
     }
 
     private void readRMAddresses() {
@@ -127,7 +130,7 @@ public class TCPServer implements Runnable {
     }
 
     public static void main(String[] args) {
-        TCPServer server = new TCPServer(Integer.parseInt(args[0]), args[1]);
+        TCPServer server = new TCPServer(args[0], Integer.parseInt(args[1]));
         new Thread(server).start();
     }
 }

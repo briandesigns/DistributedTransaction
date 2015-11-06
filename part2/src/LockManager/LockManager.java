@@ -26,7 +26,7 @@ public class LockManager {
 
     public boolean Lock(int xid, String strData, int lockType) throws DeadlockException {
 
-        // if any p`arameter is invalid, then return false
+        // if any parameter is invalid, then return false
         if (xid < 0) {
             return false;
         }

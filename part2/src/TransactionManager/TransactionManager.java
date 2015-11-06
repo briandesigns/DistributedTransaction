@@ -1,5 +1,6 @@
 package TransactionManager;
 
+import ResourceManager.TCPServer;
 import ResourceManager.ResourceManager;
 
 import ResourceManager.RMHashtable;
@@ -7,13 +8,12 @@ import ResourceManager.RMHashtable;
 import ResourceManager.MiddlewareRunnable;
 
 import java.util.Vector;
-//todo: if client interface allows client to input xid for each operation they want to run, how are we supposed guarantee that the Xid is unique within our system?
 /**
  * PLAN
  * TM keeps a counter and a boolean activeTransaction
- * middlware's client interface once receives start(), actives TM counter and turn activeTransaction to true
- * while the activeTrnsaction is still true, route all client calls to TM.op()
- * if mw does not receive a client call before tm.counter expires, then TM abort and turn activeTrnsaction to false
+ * middleware's client interface once receives start(), actives TM counter and turn activeTransaction to true
+ * while the activeTransaction is still true, route all client calls to TM.op()
+ * if mw does not receive a client call before tm.counter expires, then TM abort and turn activeTransaction to false
  * before any client add() is executed, TM first read that data and save its location, count, price
  * then perform the add()
  * if abort, add(location, -count, price) (this command can be saved into a table of things that need to be executed on abort())
@@ -24,17 +24,20 @@ import java.util.Vector;
  *
  * before any client reserve() is executed, TM first query(), queryPrice(), queryReserved(), and save ito location, count, price, reserved
  * then  perform reserve()
- * if abort, add(location, +1, price, -1), delete client reservedItem (save this intoa  table of thigns taht need to be executed on abort())
+ * if abort, add(location, +1, price, -1), delete client reservedItem (save this into a  table of things that need to be executed on abort())
  *
  * itinerary should be just implemented as a transaction itself
  *
- * the list of things taht needs to be executed on abort() should just be a list of commands to feed to run() of middleware
+ * the list of things that needs to be executed on abort() should just be a list of commands to feed to run() of middleware
  */
 public class TransactionManager implements ResourceManager {
     public static RMHashtable transactionTable;
     private static int availableXID = 0;
     private MiddlewareRunnable myMWRunnable;
     private boolean inTransaction = false;
+    private Thread TTLCountDownThread;
+    private static final int TTL_MS = 10000;
+
     {
         transactionTable = new RMHashtable();
     }
@@ -43,10 +46,35 @@ public class TransactionManager implements ResourceManager {
         this.inTransaction = decision;
     }
 
-    public boolean getTransactionStatus() {
+    public boolean isInTransaction() {
         return inTransaction;
     }
 
+    public void renewTTLCountDown() {
+        TTLCountDownThread.interrupt();
+        startTTLCountDown();
+    }
+
+    public void stopTTLCountDown() {
+        TTLCountDownThread.interrupt();
+    }
+
+    private void startTTLCountDown() {
+        TTLCountDownThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Thread.currentThread().sleep(TTL_MS);
+                    setInTransaction(false);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        TTLCountDownThread.start();
+    }
+
+    public TransactionManager(){};
 
     public TransactionManager(MiddlewareRunnable myMWRunnable) {
         this.myMWRunnable = myMWRunnable;
@@ -58,20 +86,30 @@ public class TransactionManager implements ResourceManager {
     }
 
     public boolean start() {
-        return false;
+        if (!isInTransaction()) {
+            startTTLCountDown();
+            setInTransaction(true);
+            return true;
+        } else return false;
+
     }
 
     public boolean abort() {
-        return false;
+        TTLCountDownThread.interrupt();
+        setInTransaction(false);
+        //todo: code for reverting all commits or what not
+        return true;
     }
 
     public boolean commit() {
-        return false;
+        //todo: code for committing
+        return true;
+        //todo: if error, then call abort then return false;
     }
 
     @Override
     public boolean addFlight(int id, int flightNumber, int numSeats, int flightPrice) {
-        return false;
+        TCPServer.lm.lock()
     }
 
     @Override

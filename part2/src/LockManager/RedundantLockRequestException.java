@@ -1,6 +1,5 @@
 package LockManager;
 
-//todo: implement this whole class
 /*
 	The transaction requested a lock that it already had.
 */

@@ -561,6 +561,43 @@ public class Client {
                     }
                     break;
 
+                case 23:
+                    if (arguments.size() != 1) {
+                        wrongNumber();
+                        break;
+                    }
+                    try {
+                        toMW.println("start");
+                        System.out.println(fromMW.readLine());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    break;
+                case 24:
+                    if (arguments.size() != 1) {
+                        wrongNumber();
+                        break;
+                    }
+                    try {
+                        toMW.println("abort");
+                        System.out.println(fromMW.readLine());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    break;
+                case 25:
+                    if (arguments.size() != 1) {
+                        wrongNumber();
+                        break;
+                    }
+                    try {
+                        toMW.println("commit");
+                        System.out.println(fromMW.readLine());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    break;
+
                 default:
                     System.out.println("The interface does not support this command.");
                     break;
@@ -625,6 +662,12 @@ public class Client {
             return 21;
         else if (argument.compareToIgnoreCase("newcustomerid") == 0)
             return 22;
+        else if (argument.compareToIgnoreCase("start") == 0)
+            return 23;
+        else if (argument.compareToIgnoreCase("abort") == 0)
+            return 24;
+        else if (argument.compareToIgnoreCase("commit") == 0)
+            return 25;
         else
             return 666;
     }
