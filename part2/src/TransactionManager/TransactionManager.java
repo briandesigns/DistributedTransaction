@@ -77,7 +77,7 @@ public class TransactionManager implements ResourceManager {
                     Thread.currentThread().sleep(TTL_MS);
                     abort();
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    System.out.println("TTL renewed");
                 }
             }
         });
@@ -132,8 +132,12 @@ public class TransactionManager implements ResourceManager {
         if (!isInTransaction()) {
             startTTLCountDown();
             setInTransaction(true);
+            System.out.println("transaction started");
             return true;
-        } else return false;
+        } else {
+            System.out.println("nothing to start, already in transaction");
+            return false;
+        }
 
     }
 

@@ -64,12 +64,9 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
             //keep on prompting user for input until disconnect
             outerloop:
             while ((inputLine = fromClient.readLine()) != null) {
-                Trace.info("command from client: " + inputLine);
                 //split the line into tokens and save them into an array
                 String[] cmdWords = inputLine.split(",");
                 int choice = findChoice(cmdWords);
-                Trace.info("command tokens amount: " + cmdWords.length);
-                Trace.info("choice number based on command: " + choice);
                 boolean success;
                 int value;
                 String stringValue;
@@ -85,7 +82,6 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                         }
                         else
                             success = tm.addFlight(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]), Integer.parseInt(cmdWords[3]), Integer.parseInt(cmdWords[4]));
-                            System.out.println("got here after deadlock");
                         if (success) {
                             toClient.println("true");
                             Trace.info("RM addFlight successful");

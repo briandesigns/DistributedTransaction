@@ -454,7 +454,7 @@ public class ResourceManagerRunnable implements Runnable, ResourceManager {
     protected int queryNum(int id, String key) {
         Trace.info("RM::queryNum(" + id + ", " + key + ") called.");
         ReservableItem curObj = (ReservableItem) readData(id, key);
-        int value = 0;
+        int value = -1;
         if (curObj != null) {
             value = curObj.getCount();
         }
@@ -466,7 +466,7 @@ public class ResourceManagerRunnable implements Runnable, ResourceManager {
     protected int queryPrice(int id, String key) {
         Trace.info("RM::queryPrice(" + id + ", " + key + ") called.");
         ReservableItem curObj = (ReservableItem) readData(id, key);
-        int value = 0;
+        int value = -1;
         if (curObj != null) {
             value = curObj.getPrice();
         }
