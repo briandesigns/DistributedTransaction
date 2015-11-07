@@ -19,8 +19,8 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
     Socket carSocket = null;
     Socket flightSocket = null;
     Socket roomSocket = null;
-    PrintWriter toCar, toFlight, toRoom, toClient;
-    BufferedReader fromCar, fromFlight, fromRoom, fromClient;
+    public PrintWriter toCar, toFlight, toRoom, toClient;
+    public BufferedReader fromCar, fromFlight, fromRoom, fromClient;
     TransactionManager tm;
 
     public MiddlewareRunnable(Socket clientSocket) {
@@ -320,6 +320,10 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                     case 24:
                         if (tm.abort()) {
                             toClient.println("transaction successfully aborted");
+                            System.out.println("transaction aborted");
+                        } else {
+                            toClient.println("transaction abort encountered undo failure");
+                            System.out.println("transaction aborted with undo failure");
                         }
                         break;
                     case 25:
@@ -563,6 +567,7 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
         }
     }
 
+
     @Override
     public boolean deleteFlight(int id, int flightNumber) {
         toFlight.println("deleteFlight" + "," + id + "," + flightNumber);
@@ -592,6 +597,17 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
     // Returns price of this flight.
     public int queryFlightPrice(int id, int flightNumber) {
         toFlight.println("queryFlightPrice" + "," + id + "," + flightNumber);
+        String line = null;
+        try {
+            line = fromFlight.readLine();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return Integer.parseInt(line);
+    }
+
+    public int queryFlightReserved(int id, int flightNumber) {
+        toFlight.println("queryFlightReserved" + "," + id + "," + flightNumber);
         String line = null;
         try {
             line = fromFlight.readLine();
@@ -698,6 +714,18 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
         return Integer.parseInt(line);
     }
 
+    public int queryCarsReserved(int id, String location) {
+        toCar.println("queryCarsReserved" + "," + id + "," + location);
+        String line = null;
+        try {
+            line = fromCar.readLine();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return Integer.parseInt(line);
+    }
+
+
 
     // ResourceManager.Room operations //
 
@@ -748,6 +776,17 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
     @Override
     public int queryRoomsPrice(int id, String location) {
         toRoom.println("queryRoomsPrice" + "," + id + "," + location);
+        String line = null;
+        try {
+            line = fromRoom.readLine();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return Integer.parseInt(line);
+    }
+
+    public int queryRoomsReserved(int id, String location) {
+        toRoom.println("queryRoomsReserved" + "," + id + "," + location);
         String line = null;
         try {
             line = fromRoom.readLine();

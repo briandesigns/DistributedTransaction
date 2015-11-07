@@ -1,5 +1,6 @@
 package TransactionManager;
-
+import LockManager.*;
+import LockManager.LockManager;
 import ResourceManager.TCPServer;
 import ResourceManager.ResourceManager;
 
@@ -7,6 +8,8 @@ import ResourceManager.RMHashtable;
 
 import ResourceManager.MiddlewareRunnable;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Vector;
 /**
  * PLAN
@@ -32,11 +35,18 @@ import java.util.Vector;
  */
 public class TransactionManager implements ResourceManager {
     public static RMHashtable transactionTable;
-    private static int availableXID = 0;
+    private ArrayList<String> undoStack;
+    private static int currentActiveTransactionID;
+    private static boolean hasAllSuccessSoFar = true;
+    public static final int UNUSED_TRANSACTION_ID = -1;
     private MiddlewareRunnable myMWRunnable;
     private boolean inTransaction = false;
     private Thread TTLCountDownThread;
     private static final int TTL_MS = 10000;
+    public static final String CAR = "car";
+    public static final String FLIGHT = "flight";
+    public static final String ROOM = "room";
+    public static final String CUSTOMER = "customer";
 
     {
         transactionTable = new RMHashtable();
@@ -78,13 +88,47 @@ public class TransactionManager implements ResourceManager {
 
     public TransactionManager(MiddlewareRunnable myMWRunnable) {
         this.myMWRunnable = myMWRunnable;
+        this.undoStack = new ArrayList<String>();
     }
 
-    public static synchronized int generateXID() {
-        availableXID++;
-        return availableXID;
-    }
+    private boolean undoAll() {
+        boolean result = true;
+        for (int i = this.undoStack.size() - 1; i >= 0; i--) {
+            String line = undoStack.get(i);
+            if (line.toLowerCase().contains("flight")) {
+                myMWRunnable.toFlight.println(line);
+                try {
+                    if (myMWRunnable.fromFlight.readLine().toLowerCase().contains("false"))
+                        result = false;
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
 
+            else if (line.toLowerCase().contains("car")){
+                myMWRunnable.toCar.println(line);
+                try {
+                    if(myMWRunnable.fromCar.readLine().toLowerCase().contains("false"))
+                        result = false;
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            else if (line.toLowerCase().contains("room")) {
+                myMWRunnable.toRoom.println(line);
+                try {
+                    if (myMWRunnable.fromRoom.readLine().toLowerCase().contains("false"))
+                        result = false;
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            else
+            //todo: handle customer undos
+                ;
+        }
+        return result;
+    }
     public boolean start() {
         if (!isInTransaction()) {
             startTTLCountDown();
@@ -95,76 +139,286 @@ public class TransactionManager implements ResourceManager {
     }
 
     public boolean abort() {
-        TTLCountDownThread.interrupt();
+        stopTTLCountDown();
         setInTransaction(false);
-        //todo: code for reverting all commits or what not
-        return true;
+        boolean result = undoAll();
+        transactionTable.remove(this.currentActiveTransactionID);
+        TCPServer.lm.UnlockAll(currentActiveTransactionID);
+        currentActiveTransactionID = UNUSED_TRANSACTION_ID;
+        this.undoStack = new ArrayList<String>();
+        System.out.println("abort() call ended and returns: " +  result);
+        return result;
     }
 
     public boolean commit() {
-        //todo: code for committing
-        return true;
-        //todo: if error, then call abort then return false;
+        if(!hasAllSuccessSoFar) {
+            abort();
+            return false;
+        }
+        else {
+            stopTTLCountDown();
+            setInTransaction(false);
+            transactionTable.remove(this.currentActiveTransactionID);
+            TCPServer.lm.UnlockAll(currentActiveTransactionID);
+            currentActiveTransactionID = UNUSED_TRANSACTION_ID;
+            this.undoStack = new ArrayList<String>();
+            return true;
+        }
     }
 
     @Override
     public boolean addFlight(int id, int flightNumber, int numSeats, int flightPrice) {
-        TCPServer.lm.lock()
+        try {
+            renewTTLCountDown();
+            if (!TCPServer.lm.Lock(id, FLIGHT, LockManager.WRITE)) {
+                this.hasAllSuccessSoFar = false;
+                return false;
+            }
+            this.currentActiveTransactionID = id;
+            String undoCmd = "undoAddFlight," + id + "," + flightNumber + "," + myMWRunnable.queryFlight(id, flightNumber) + "," + myMWRunnable.queryFlightPrice(id, flightNumber) + "," + myMWRunnable.queryFlightReserved(id, flightNumber);
+            System.out.println("just built undoCmd:" + undoCmd);
+            undoStack.add(undoCmd);
+
+            boolean[] involvedRMs = (boolean[]) transactionTable.get(id);
+            if (involvedRMs == null) {
+                involvedRMs = new boolean[]{true, false, false};
+                transactionTable.put(id,involvedRMs);
+            } else {
+                involvedRMs[0] = true;
+            }
+            return myMWRunnable.addFlight(id, flightNumber, numSeats, flightPrice);
+        } catch (DeadlockException e) {
+            e.printStackTrace();
+            abort();
+            return false;
+        }
     }
 
     @Override
     public boolean deleteFlight(int id, int flightNumber) {
-        return false;
+        try {
+            renewTTLCountDown();
+            if (!TCPServer.lm.Lock(id, FLIGHT, LockManager.WRITE)) {
+                this.hasAllSuccessSoFar = false;
+                return false;
+            }
+            this.currentActiveTransactionID = id;
+            String undoCmd = "undoAddFlight," + id + "," + flightNumber + "," + myMWRunnable.queryFlight(id, flightNumber) + "," + myMWRunnable.queryFlightPrice(id, flightNumber) + "," + myMWRunnable.queryFlightReserved(id, flightNumber);
+            undoStack.add(undoCmd);
+            boolean[] involvedRMs = (boolean[]) transactionTable.get(id);
+            if (involvedRMs == null) {
+                involvedRMs = new boolean[]{true, false, false};
+                transactionTable.put(id,involvedRMs);
+            } else {
+                involvedRMs[0] = true;
+            }
+            return myMWRunnable.deleteFlight(id, flightNumber);
+        } catch (DeadlockException e) {
+            e.printStackTrace();
+            abort();
+            return false;
+        }
     }
 
     @Override
     public int queryFlight(int id, int flightNumber) {
-        return 0;
+        try {
+            renewTTLCountDown();
+            if (!TCPServer.lm.Lock(id, FLIGHT, LockManager.READ)) {
+                return -1;
+            }
+            this.currentActiveTransactionID = id;
+            return myMWRunnable.queryFlight(id, flightNumber);
+        } catch (DeadlockException e) {
+            e.printStackTrace();
+            abort();
+            return -1;
+        }
     }
 
     @Override
     public int queryFlightPrice(int id, int flightNumber) {
-        return 0;
+        try {
+            renewTTLCountDown();
+            if (!TCPServer.lm.Lock(id, FLIGHT, LockManager.READ)) {
+                return -1;
+            }
+            this.currentActiveTransactionID = id;
+            return myMWRunnable.queryFlightPrice(id, flightNumber);
+        } catch (DeadlockException e) {
+            e.printStackTrace();
+            abort();
+            return -1;
+        }
     }
 
     @Override
     public boolean addCars(int id, String location, int numCars, int carPrice) {
-        return false;
+        try {
+            renewTTLCountDown();
+            if (!TCPServer.lm.Lock(id, CAR, LockManager.WRITE)) {
+                this.hasAllSuccessSoFar = false;
+                return false;
+            }
+            this.currentActiveTransactionID = id;
+            String undoCmd = "undoAddCars," + id + "," + location + "," + myMWRunnable.queryCars(id, location) + "," + myMWRunnable.queryCarsPrice(id, location) + "," + myMWRunnable.queryCarsReserved(id, location);
+            undoStack.add(undoCmd);
+
+            boolean[] involvedRMs = (boolean[]) transactionTable.get(id);
+            if (involvedRMs == null) {
+                involvedRMs = new boolean[]{false, true, false};
+                transactionTable.put(id,involvedRMs);
+            } else {
+                involvedRMs[1] = true;
+            }
+            return myMWRunnable.addCars(id, location, numCars, carPrice);
+        } catch (DeadlockException e) {
+            e.printStackTrace();
+            abort();
+            return false;
+        }
     }
 
     @Override
     public boolean deleteCars(int id, String location) {
-        return false;
+        try {
+            renewTTLCountDown();
+            if (!TCPServer.lm.Lock(id, CAR, LockManager.WRITE)) {
+                this.hasAllSuccessSoFar = false;
+                return false;
+            }
+            this.currentActiveTransactionID = id;
+            String undoCmd = "undoAddCars," + id + "," + location + "," + myMWRunnable.queryCars(id, location) + "," + myMWRunnable.queryCarsPrice(id, location) + "," + myMWRunnable.queryCarsReserved(id, location);
+            undoStack.add(undoCmd);
+            boolean[] involvedRMs = (boolean[]) transactionTable.get(id);
+            if (involvedRMs == null) {
+                involvedRMs = new boolean[]{false, true, false};
+                transactionTable.put(id,involvedRMs);
+            } else {
+                involvedRMs[1] = true;
+            }
+            return myMWRunnable.deleteCars(id, location);
+        } catch (DeadlockException e) {
+            e.printStackTrace();
+            abort();
+            return false;
+        }
     }
 
     @Override
     public int queryCars(int id, String location) {
-        return 0;
+        try {
+            renewTTLCountDown();
+            if (!TCPServer.lm.Lock(id, CAR, LockManager.READ)) {
+                return -1;
+            }
+            this.currentActiveTransactionID = id;
+            return myMWRunnable.queryCars(id, location);
+        } catch (DeadlockException e) {
+            e.printStackTrace();
+            abort();
+            return -1;
+        }
     }
 
     @Override
     public int queryCarsPrice(int id, String location) {
-        return 0;
+        try {
+            renewTTLCountDown();
+            if (!TCPServer.lm.Lock(id, CAR, LockManager.READ)) {
+                return -1;
+            }
+            this.currentActiveTransactionID = id;
+            return myMWRunnable.queryCarsPrice(id, location);
+        } catch (DeadlockException e) {
+            e.printStackTrace();
+            abort();
+            return -1;
+        }
     }
 
     @Override
     public boolean addRooms(int id, String location, int numRooms, int roomPrice) {
-        return false;
+        try {
+            renewTTLCountDown();
+            if (!TCPServer.lm.Lock(id, ROOM, LockManager.WRITE)) {
+                this.hasAllSuccessSoFar = false;
+                return false;
+            }
+            this.currentActiveTransactionID = id;
+            String undoCmd = "undoAddRooms," + id + "," + location + "," + myMWRunnable.queryRooms(id, location) + "," + myMWRunnable.queryRoomsPrice(id, location) + "," + myMWRunnable.queryRoomsReserved(id, location);
+            undoStack.add(undoCmd);
+
+            boolean[] involvedRMs = (boolean[]) transactionTable.get(id);
+            if (involvedRMs == null) {
+                involvedRMs = new boolean[]{false, false, true};
+                transactionTable.put(id,involvedRMs);
+            } else {
+                involvedRMs[2] = true;
+            }
+            return myMWRunnable.addRooms(id, location, numRooms, roomPrice);
+        } catch (DeadlockException e) {
+            e.printStackTrace();
+            abort();
+            return false;
+        }
     }
 
     @Override
     public boolean deleteRooms(int id, String location) {
-        return false;
+        try {
+            renewTTLCountDown();
+            if (!TCPServer.lm.Lock(id, ROOM, LockManager.WRITE)) {
+                this.hasAllSuccessSoFar = false;
+                return false;
+            }
+            this.currentActiveTransactionID = id;
+            String undoCmd = "undoAddRooms," + id + "," + location + "," + myMWRunnable.queryRooms(id, location) + "," + myMWRunnable.queryRoomsPrice(id, location) + "," + myMWRunnable.queryRoomsReserved(id, location);
+            undoStack.add(undoCmd);
+            boolean[] involvedRMs = (boolean[]) transactionTable.get(id);
+            if (involvedRMs == null) {
+                involvedRMs = new boolean[]{false, false, true};
+                transactionTable.put(id,involvedRMs);
+            } else {
+                involvedRMs[2] = true;
+            }
+            return myMWRunnable.deleteRooms(id, location);
+        } catch (DeadlockException e) {
+            e.printStackTrace();
+            abort();
+            return false;
+        }
     }
 
     @Override
     public int queryRooms(int id, String location) {
-        return 0;
-    }
+        try {
+            renewTTLCountDown();
+            if (!TCPServer.lm.Lock(id, ROOM, LockManager.READ)) {
+                return -1;
+            }
+            this.currentActiveTransactionID = id;
+            return myMWRunnable.queryRooms(id, location);
+        } catch (DeadlockException e) {
+            e.printStackTrace();
+            abort();
+            return -1;
+        }    }
 
     @Override
     public int queryRoomsPrice(int id, String location) {
-        return 0;
+        try {
+            renewTTLCountDown();
+            if (!TCPServer.lm.Lock(id, ROOM, LockManager.READ)) {
+                return -1;
+            }
+            this.currentActiveTransactionID = id;
+            return myMWRunnable.queryRoomsPrice(id, location);
+        } catch (DeadlockException e) {
+            e.printStackTrace();
+            abort();
+            return -1;
+        }
     }
 
     @Override

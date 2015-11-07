@@ -24,7 +24,7 @@ public class ResourceManagerRunnable implements Runnable, ResourceManager {
 
     public ResourceManagerRunnable(Socket clientSocket, String serverType) {
         this.clientSocket = clientSocket;
-        if(serverType.equals(TCPServer.ROOM_RM)) {
+        if (serverType.equals(TCPServer.ROOM_RM)) {
             hashTable = TCPServer.m_itemHT_room;
         } else if (serverType.equals(TCPServer.FLIGHT_RM)) {
             hashTable = TCPServer.m_itemHT_flight;
@@ -111,7 +111,7 @@ public class ResourceManagerRunnable implements Runnable, ResourceManager {
                             success = deleteCars(Integer.parseInt(cmdWords[1]), cmdWords[2]);
                             if (success) toClient.println("true");
                             else toClient.println("false");
-                                                        break;
+                            break;
                         case 8:
                             if (cmdWords.length < 2) {
                                 toClient.println("ERROR : wrong arguments");
@@ -235,9 +235,60 @@ public class ResourceManagerRunnable implements Runnable, ResourceManager {
                                 toClient.println("ERROR : wrong arguments");
                                 break;
                             }
-                            success = increaseReservableItemCount(Integer.parseInt(cmdWords[1]),cmdWords[2], Integer.parseInt(cmdWords[3]));
+                            success = increaseReservableItemCount(Integer.parseInt(cmdWords[1]), cmdWords[2], Integer.parseInt(cmdWords[3]));
                             if (success) toClient.println("true");
                             else toClient.println("false");
+                            break;
+                        case 24:
+                            if (cmdWords.length < 5) {
+                                toClient.println("ERROR : wrong arguments");
+                                break;
+                            }
+                            success = undoAddFlight(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]), Integer.parseInt(cmdWords[3]), Integer.parseInt(cmdWords[4]), Integer.parseInt(cmdWords[5]));
+                            if (success) toClient.println("true");
+                            else toClient.println("false");
+                            break;
+                        case 25:
+                            if (cmdWords.length < 5) {
+                                toClient.println("ERROR : wrong arguments");
+                                break;
+                            }
+                            success = undoAddCars(Integer.parseInt(cmdWords[1]), cmdWords[2], Integer.parseInt(cmdWords[3]), Integer.parseInt(cmdWords[4]), Integer.parseInt(cmdWords[5]));
+                            if (success) toClient.println("true");
+                            else toClient.println("false");
+                            break;
+                        case 26:
+                            if (cmdWords.length < 5) {
+                                toClient.println("ERROR : wrong arguments");
+                                break;
+                            }
+                            success = undoAddRooms(Integer.parseInt(cmdWords[1]), cmdWords[2], Integer.parseInt(cmdWords[3]), Integer.parseInt(cmdWords[4]), Integer.parseInt(cmdWords[5]));
+                            if (success) toClient.println("true");
+                            else toClient.println("false");
+                            break;
+                        case 27:
+                            if (cmdWords.length < 2) {
+                                toClient.println("ERROR : wrong arguments");
+                                break;
+                            }
+                            value = queryFlightReserved(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]));
+                            toClient.println(value);
+                            break;
+                        case 28:
+                            if (cmdWords.length < 2) {
+                                toClient.println("ERROR : wrong arguments");
+                                break;
+                            }
+                            value = queryCarsReserved(Integer.parseInt(cmdWords[1]), cmdWords[2]);
+                            toClient.println(value);
+                            break;
+                        case 29:
+                            if (cmdWords.length < 2) {
+                                toClient.println("ERROR : wrong arguments");
+                                break;
+                            }
+                            value = queryRoomsReserved(Integer.parseInt(cmdWords[1]), cmdWords[2]);
+                            toClient.println(value);
                             break;
                         default:
                             toClient.println("ERROR :  Command " + cmdWords[0] + " not supported");
@@ -249,62 +300,74 @@ public class ResourceManagerRunnable implements Runnable, ResourceManager {
                 e.printStackTrace();
             }
 
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
     private int findChoice(String[] cmdWords) {
-        int choice =-1;
+        int choice = -1;
 
         if (cmdWords[0].compareToIgnoreCase("help") == 0)
             choice = 1;
         else if (cmdWords[0].compareToIgnoreCase("addflight") == 0)
-            choice =2;
+            choice = 2;
         else if (cmdWords[0].compareToIgnoreCase("addcars") == 0)
-            choice =3;
+            choice = 3;
         else if (cmdWords[0].compareToIgnoreCase("addrooms") == 0)
-            choice =4;
+            choice = 4;
         else if (cmdWords[0].compareToIgnoreCase("newcustomer") == 0)
-            choice =5;
+            choice = 5;
         else if (cmdWords[0].compareToIgnoreCase("deleteflight") == 0)
-            choice =6;
+            choice = 6;
         else if (cmdWords[0].compareToIgnoreCase("deletecars") == 0)
-            choice =7;
+            choice = 7;
         else if (cmdWords[0].compareToIgnoreCase("deleterooms") == 0)
-            choice=8;
+            choice = 8;
         else if (cmdWords[0].compareToIgnoreCase("deletecustomer") == 0)
-            choice=9;
+            choice = 9;
         else if (cmdWords[0].compareToIgnoreCase("queryflight") == 0)
-            choice=10;
+            choice = 10;
         else if (cmdWords[0].compareToIgnoreCase("querycars") == 0)
-            choice= 11;
+            choice = 11;
         else if (cmdWords[0].compareToIgnoreCase("queryrooms") == 0)
-            choice= 12;
+            choice = 12;
         else if (cmdWords[0].compareToIgnoreCase("querycustomerinfo") == 0)
-            choice= 13;
+            choice = 13;
         else if (cmdWords[0].compareToIgnoreCase("queryflightprice") == 0)
-            choice= 14;
+            choice = 14;
         else if (cmdWords[0].compareToIgnoreCase("querycarsprice") == 0)
-            choice= 15;
+            choice = 15;
         else if (cmdWords[0].compareToIgnoreCase("queryroomsprice") == 0)
-            choice= 16;
+            choice = 16;
         else if (cmdWords[0].compareToIgnoreCase("reserveflight") == 0)
-            choice= 17;
+            choice = 17;
         else if (cmdWords[0].compareToIgnoreCase("reservecar") == 0)
-            choice= 18;
+            choice = 18;
         else if (cmdWords[0].compareToIgnoreCase("reserveroom") == 0)
-            choice= 19;
+            choice = 19;
         else if (cmdWords[0].compareToIgnoreCase("reserveitinerary") == 0)
-            choice= 20;
+            choice = 20;
         else if (cmdWords[0].compareToIgnoreCase("END") == 0)
-            choice= 21;
+            choice = 21;
         else if (cmdWords[0].compareToIgnoreCase("newcustomerid") == 0)
-            choice=22;
+            choice = 22;
         else if (cmdWords[0].compareToIgnoreCase("increasereservableitemcount") == 0)
-            choice=23;
+            choice = 23;
+        else if (cmdWords[0].compareToIgnoreCase("undoaddflight") == 0)
+            choice =24;
+        else if (cmdWords[0].compareToIgnoreCase("undoaddcars") == 0)
+            choice = 25;
+        else if (cmdWords[0].compareToIgnoreCase("undoaddrooms") == 0)
+            choice =26;
+        else if (cmdWords[0].compareToIgnoreCase("queryflightreserved") == 0)
+            choice = 27;
+        else if (cmdWords[0].compareToIgnoreCase("querycarsreserved") == 0)
+            choice = 28;
+        else if (cmdWords[0].compareToIgnoreCase("queryroomsreserved") == 0)
+            choice = 29;
         else
-            choice=-1;
+        choice = -1;
         return choice;
     }
 
@@ -436,7 +499,32 @@ public class ResourceManagerRunnable implements Runnable, ResourceManager {
                     + ", $" + flightPrice + ", " + numSeats + ") OK: "
                     + "seats = " + curObj.getCount() + ", price = $" + flightPrice);
         }
-        return(true);
+        return (true);
+    }
+
+    private boolean undoAddFlight(int id, int flightNumber, int numSeats, int flightPrice, int numReserved) {
+        Trace.info("RM::undoAddFlight(" + id + ", " + flightNumber
+                + ", $" + flightPrice + ", " + numSeats + ") called.");
+        Flight curObj = (Flight) readData(id, Flight.getKey(flightNumber));
+        if (curObj == null) {
+            // Doesn't exist; add it.
+            Flight newObj = new Flight(flightNumber, numSeats, flightPrice);
+            writeData(id, newObj.getKey(), newObj);
+            Trace.info("RM::addFlight(" + id + ", " + flightNumber
+                    + ", $" + flightPrice + ", " + numSeats + ") OK.");
+        } else {
+            curObj.setCount(numSeats);
+            curObj.setReserved(numReserved);
+            if (flightPrice > 0) {
+                curObj.setPrice(flightPrice);
+            }
+            //the line below should be redundant
+            writeData(id, curObj.getKey(), curObj);
+            Trace.info("RM::addFlight(" + id + ", " + flightNumber
+                    + ", $" + flightPrice + ", " + numSeats + ") OK: "
+                    + "seats = " + curObj.getCount() + ", price = $" + flightPrice);
+        }
+        return (true);
     }
 
     @Override
@@ -453,6 +541,15 @@ public class ResourceManagerRunnable implements Runnable, ResourceManager {
     // Returns price of this flight.
     public int queryFlightPrice(int id, int flightNumber) {
         return queryPrice(id, Flight.getKey(flightNumber));
+    }
+
+    public int queryFlightReserved(int id, int flightNumber) {
+        ReservableItem curObj = (ReservableItem) readData(id, Flight.getKey(flightNumber));
+        int value = 0;
+        if (curObj != null) {
+            value = curObj.getReserved();
+        }
+        return value;
     }
 
     /*
@@ -522,6 +619,31 @@ public class ResourceManagerRunnable implements Runnable, ResourceManager {
         return true;
     }
 
+    private boolean undoAddCars(int id, String location, int numCars, int carPrice, int numReserved) {
+        Trace.info("RM::undoAddCars(" + id + ", " + location
+                + ", $" + carPrice + ", " + numCars + ") called.");
+        Car curObj = (Car) readData(id, Car.getKey(location));
+        if (curObj == null) {
+            // Doesn't exist; add it.
+            Car newObj = new Car(location, numCars, carPrice);
+            writeData(id, newObj.getKey(), newObj);
+            Trace.info("RM::addCars(" + id + ", " + location
+                    + ", $" + carPrice + ", " + numCars + ") OK.");
+        } else {
+            curObj.setCount(numCars);
+            curObj.setReserved(numReserved);
+            if (carPrice > 0) {
+                curObj.setPrice(carPrice);
+            }
+            //the line below should be redundant
+            writeData(id, curObj.getKey(), curObj);
+            Trace.info("RM::addCars(" + id + ", " + location
+                    + ", $" + carPrice + ", " + numCars + ") OK: "
+                    + "cars = " + curObj.getCount() + ", price = $" + carPrice);
+        }
+        return (true);
+    }
+
     // Delete cars from a location.
     @Override
     public boolean deleteCars(int id, String location) {
@@ -538,6 +660,15 @@ public class ResourceManagerRunnable implements Runnable, ResourceManager {
     @Override
     public int queryCarsPrice(int id, String location) {
         return queryPrice(id, Car.getKey(location));
+    }
+
+    public int queryCarsReserved(int id, String location) {
+        ReservableItem curObj = (ReservableItem) readData(id, Car.getKey(location));
+        int value = 0;
+        if (curObj != null) {
+            value = curObj.getReserved();
+        }
+        return value;
     }
 
 
@@ -571,6 +702,32 @@ public class ResourceManagerRunnable implements Runnable, ResourceManager {
         return true;
     }
 
+    private boolean undoAddRooms(int id, String location, int numRooms, int roomPrice, int numReserved) {
+        Trace.info("RM::undoAddRooms(" + id + ", " + location
+                + ", $" + roomPrice + ", " + numRooms + ") called.");
+        Room curObj = (Room) readData(id, Room.getKey(location));
+        if (curObj == null) {
+            // Doesn't exist; add it.
+            Room newObj = new Room(location, numRooms, roomPrice);
+            writeData(id, newObj.getKey(), newObj);
+            Trace.info("RM::addRooms(" + id + ", " + location
+                    + ", $" + roomPrice + ", " + numRooms + ") OK.");
+        } else {
+            curObj.setCount(numRooms);
+            curObj.setReserved(numReserved);
+            if (roomPrice > 0) {
+                curObj.setPrice(roomPrice);
+            }
+            //the line below should be redundant
+            writeData(id, curObj.getKey(), curObj);
+            Trace.info("RM::addRooms(" + id + ", " + location
+                    + ", $" + roomPrice + ", " + numRooms + ") OK: "
+                    + "rooms = " + curObj.getCount() + ", price = $" + roomPrice);
+        }
+        return (true);
+    }
+
+
     // Delete rooms from a location.
     @Override
     public boolean deleteRooms(int id, String location) {
@@ -587,6 +744,15 @@ public class ResourceManagerRunnable implements Runnable, ResourceManager {
     @Override
     public int queryRoomsPrice(int id, String location) {
         return queryPrice(id, Room.getKey(location));
+    }
+
+    public int queryRoomsReserved(int id, String location) {
+        ReservableItem curObj = (ReservableItem) readData(id, Room.getKey(location));
+        int value = 0;
+        if (curObj != null) {
+            value = curObj.getReserved();
+        }
+        return value;
     }
 
 
@@ -635,7 +801,7 @@ public class ResourceManagerRunnable implements Runnable, ResourceManager {
             // Increase the reserved numbers of all reservable items that
             // the customer reserved.
             RMHashtable reservationHT = cust.getReservations();
-            for (Enumeration e = reservationHT.keys(); e.hasMoreElements();) {
+            for (Enumeration e = reservationHT.keys(); e.hasMoreElements(); ) {
                 String reservedKey = (String) (e.nextElement());
                 ReservedItem reservedItem = cust.getReservedItem(reservedKey);
                 Trace.info("RM::deleteCustomer(" + id + ", " + customerId + "): "
@@ -721,7 +887,7 @@ public class ResourceManagerRunnable implements Runnable, ResourceManager {
     public boolean increaseReservableItemCount(int id, String key, int count) {
         ReservableItem item =
                 (ReservableItem) readData(id, key);
-        if (item==null) {
+        if (item == null) {
             Trace.info("no such item, cannot increase count");
             return false;
         }
