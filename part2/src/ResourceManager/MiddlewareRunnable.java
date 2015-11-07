@@ -85,6 +85,7 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                         }
                         else
                             success = tm.addFlight(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]), Integer.parseInt(cmdWords[3]), Integer.parseInt(cmdWords[4]));
+                            System.out.println("got here after deadlock");
                         if (success) {
                             toClient.println("true");
                             Trace.info("RM addFlight successful");
@@ -318,12 +319,17 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                         else toClient.println("an existing transaction is currently active");
                         break;
                     case 24:
-                        if (tm.abort()) {
-                            toClient.println("transaction successfully aborted");
-                            System.out.println("transaction aborted");
+                        if (tm.isInTransaction()) {
+                            if (tm.abort()) {
+                                toClient.println("transaction successfully aborted");
+                                System.out.println("transaction aborted");
+                            } else {
+                                toClient.println("transaction abort encountered undo failure");
+                                System.out.println("transaction aborted with undo failure");
+                            }
                         } else {
-                            toClient.println("transaction abort encountered undo failure");
-                            System.out.println("transaction aborted with undo failure");
+                            toClient.println("no open transaction currently, nothing to abort");
+                            System.out.println("nothing to abort");
                         }
                         break;
                     case 25:
@@ -545,6 +551,16 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
 
     // ResourceManager.Flight operations //
 
+    public boolean isExistingFlight(int id, int flightNumber) {
+        toFlight.println("isExistingFlight" + "," + id + "," + flightNumber);
+        String line = null;
+        try {
+            line = fromFlight.readLine();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return line.equalsIgnoreCase("true");
+    }
     // Create a new flight, or add seats to existing flight.
     // Note: if flightPrice <= 0 and the flight already exists, it maintains
     // its current price.
@@ -656,6 +672,16 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
 
     // ResourceManager.Car operations //
 
+    public boolean isExistingCars(int id, String location) {
+        toCar.println("isExistingCars" + "," + id + "," + location);
+        String line = null;
+        try {
+            line = fromCar.readLine();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return line.equalsIgnoreCase("true");
+    }
     // Create a new car location or add cars to an existing location.
     // Note: if price <= 0 and the car location already exists, it maintains
     // its current price.
@@ -729,6 +755,16 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
 
     // ResourceManager.Room operations //
 
+    public boolean isExistingRooms(int id, String location) {
+        toRoom.println("isExistingRooms" + "," + id + "," + location);
+        String line = null;
+        try {
+            line = fromRoom.readLine();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return line.equalsIgnoreCase("true");
+    }
     // Create a new room location or add rooms to an existing location.
     // Note: if price <= 0 and the room location already exists, it maintains
     // its current price.
@@ -741,8 +777,7 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        if (line.equalsIgnoreCase("true")) return true;
-        else return false;
+        return (line.equalsIgnoreCase("true"));
     }
 
     // Delete rooms from a location.

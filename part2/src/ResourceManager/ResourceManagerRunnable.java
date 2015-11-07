@@ -290,6 +290,30 @@ public class ResourceManagerRunnable implements Runnable, ResourceManager {
                             value = queryRoomsReserved(Integer.parseInt(cmdWords[1]), cmdWords[2]);
                             toClient.println(value);
                             break;
+                        case 30:
+                            if (cmdWords.length < 2) {
+                                toClient.println("ERROR : wrong arguments");
+                                break;
+                            }
+                            success = isExistingFlight(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]));
+                            toClient.println(success);
+                            break;
+                        case 31:
+                            if (cmdWords.length < 2) {
+                                toClient.println("ERROR : wrong arguments");
+                                break;
+                            }
+                            success = isExistingCars(Integer.parseInt(cmdWords[1]), cmdWords[2]);
+                            toClient.println(success);
+                            break;
+                        case 32:
+                            if (cmdWords.length < 2) {
+                                toClient.println("ERROR : wrong arguments");
+                                break;
+                            }
+                            success = isExistingRooms(Integer.parseInt(cmdWords[1]),(cmdWords[2]));
+                            toClient.println(success);
+                            break;
                         default:
                             toClient.println("ERROR :  Command " + cmdWords[0] + " not supported");
                             break;
@@ -366,6 +390,12 @@ public class ResourceManagerRunnable implements Runnable, ResourceManager {
             choice = 28;
         else if (cmdWords[0].compareToIgnoreCase("queryroomsreserved") == 0)
             choice = 29;
+        else if (cmdWords[0].compareToIgnoreCase("isexistingflight") == 0)
+            choice = 30;
+        else if (cmdWords[0].compareToIgnoreCase("isexistingcars") == 0)
+            choice = 31;
+        else if (cmdWords[0].compareToIgnoreCase("isexistingrooms") == 0)
+            choice = 32;
         else
         choice = -1;
         return choice;
@@ -472,6 +502,13 @@ public class ResourceManagerRunnable implements Runnable, ResourceManager {
 
     // ResourceManager.Flight operations //
 
+    public boolean isExistingFlight(int id, int flightNumber) {
+        Trace.info("RM::isExistingFlight(" + id + ", " + flightNumber);
+        Flight curObj = (Flight) readData(id, Flight.getKey(flightNumber));
+        if (curObj == null) {
+            return false;
+        } else return true;
+    }
     // Create a new flight, or add seats to existing flight.
     // Note: if flightPrice <= 0 and the flight already exists, it maintains
     // its current price.
@@ -591,6 +628,13 @@ public class ResourceManagerRunnable implements Runnable, ResourceManager {
 
     // ResourceManager.Car operations //
 
+    public boolean isExistingCars(int id, String location) {
+        Trace.info("RM::isExistingCars(" + id + ", " + location);
+        Car curObj = (Car) readData(id, Car.getKey(location));
+        if (curObj == null) {
+            return false;
+        } else return true;
+    }
     // Create a new car location or add cars to an existing location.
     // Note: if price <= 0 and the car location already exists, it maintains
     // its current price.
@@ -674,6 +718,13 @@ public class ResourceManagerRunnable implements Runnable, ResourceManager {
 
     // ResourceManager.Room operations //
 
+    public boolean isExistingRooms(int id, String location) {
+        Trace.info("RM::isExistingRooms(" + id + ", " + location);
+        Room curObj = (Room) readData(id, Room.getKey(location));
+        if (curObj == null) {
+            return false;
+        } else return true;
+    }
     // Create a new room location or add rooms to an existing location.
     // Note: if price <= 0 and the room location already exists, it maintains
     // its current price.

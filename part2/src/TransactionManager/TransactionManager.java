@@ -42,7 +42,7 @@ public class TransactionManager implements ResourceManager {
     private MiddlewareRunnable myMWRunnable;
     private boolean inTransaction = false;
     private Thread TTLCountDownThread;
-    private static final int TTL_MS = 10000;
+    private static final int TTL_MS = 20000;
     public static final String CAR = "car";
     public static final String FLIGHT = "flight";
     public static final String ROOM = "room";
@@ -75,7 +75,7 @@ public class TransactionManager implements ResourceManager {
             public void run() {
                 try {
                     Thread.currentThread().sleep(TTL_MS);
-                    setInTransaction(false);
+                    abort();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -84,7 +84,6 @@ public class TransactionManager implements ResourceManager {
         TTLCountDownThread.start();
     }
 
-    public TransactionManager(){};
 
     public TransactionManager(MiddlewareRunnable myMWRunnable) {
         this.myMWRunnable = myMWRunnable;
@@ -166,6 +165,8 @@ public class TransactionManager implements ResourceManager {
         }
     }
 
+
+    //todo: fix non existing flight problems, same thing for room and car
     @Override
     public boolean addFlight(int id, int flightNumber, int numSeats, int flightPrice) {
         try {
@@ -175,8 +176,13 @@ public class TransactionManager implements ResourceManager {
                 return false;
             }
             this.currentActiveTransactionID = id;
-            String undoCmd = "undoAddFlight," + id + "," + flightNumber + "," + myMWRunnable.queryFlight(id, flightNumber) + "," + myMWRunnable.queryFlightPrice(id, flightNumber) + "," + myMWRunnable.queryFlightReserved(id, flightNumber);
-            System.out.println("just built undoCmd:" + undoCmd);
+            String undoCmd;
+            if (myMWRunnable.isExistingFlight(id, flightNumber)) {
+                undoCmd= "undoAddFlight," + id + "," + flightNumber + "," + myMWRunnable.queryFlight(id, flightNumber) + "," + myMWRunnable.queryFlightPrice(id, flightNumber) + "," + myMWRunnable.queryFlightReserved(id, flightNumber);
+                System.out.println("just built undoCmd:" + undoCmd);
+            } else {
+                undoCmd = "deleteFlight," + id + "," + flightNumber;
+            }
             undoStack.add(undoCmd);
 
             boolean[] involvedRMs = (boolean[]) transactionTable.get(id);
@@ -188,12 +194,15 @@ public class TransactionManager implements ResourceManager {
             }
             return myMWRunnable.addFlight(id, flightNumber, numSeats, flightPrice);
         } catch (DeadlockException e) {
-            e.printStackTrace();
+//            e.printStackTrace();
+            System.out.println("TM ADDFLIGHT DEADLOCK JUST ABORTED, ABOUT TO RETURN FALSE");
             abort();
             return false;
         }
     }
 
+
+    //todo: fix non existing non-existing flighrt problems, same for room and car
     @Override
     public boolean deleteFlight(int id, int flightNumber) {
         try {
@@ -261,7 +270,13 @@ public class TransactionManager implements ResourceManager {
                 return false;
             }
             this.currentActiveTransactionID = id;
-            String undoCmd = "undoAddCars," + id + "," + location + "," + myMWRunnable.queryCars(id, location) + "," + myMWRunnable.queryCarsPrice(id, location) + "," + myMWRunnable.queryCarsReserved(id, location);
+            String undoCmd;
+            if (myMWRunnable.isExistingCars(id, location)) {
+                undoCmd = "undoAddCars," + id + "," + location + "," + myMWRunnable.queryCars(id, location) + "," + myMWRunnable.queryCarsPrice(id, location) + "," + myMWRunnable.queryCarsReserved(id, location);
+                System.out.println("just built undoCmd:" + undoCmd);
+            } else {
+                undoCmd = "deleteCars," + id + "," + location;
+            }
             undoStack.add(undoCmd);
 
             boolean[] involvedRMs = (boolean[]) transactionTable.get(id);
@@ -346,7 +361,14 @@ public class TransactionManager implements ResourceManager {
                 return false;
             }
             this.currentActiveTransactionID = id;
-            String undoCmd = "undoAddRooms," + id + "," + location + "," + myMWRunnable.queryRooms(id, location) + "," + myMWRunnable.queryRoomsPrice(id, location) + "," + myMWRunnable.queryRoomsReserved(id, location);
+            String undoCmd;
+            if (myMWRunnable.isExistingRooms(id, location)) {
+                undoCmd = "undoAddRooms," + id + "," + location + "," + myMWRunnable.queryRooms(id, location) + "," + myMWRunnable.queryRoomsPrice(id, location) + "," + myMWRunnable.queryRoomsReserved(id, location);
+                System.out.println("just built undoCmd:" + undoCmd);
+            } else {
+                undoCmd = "deleteRooms," + id + "," + location;
+            }
+
             undoStack.add(undoCmd);
 
             boolean[] involvedRMs = (boolean[]) transactionTable.get(id);
