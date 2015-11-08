@@ -314,6 +314,15 @@ public class ResourceManagerRunnable implements Runnable, ResourceManager {
                             success = isExistingRooms(Integer.parseInt(cmdWords[1]),(cmdWords[2]));
                             toClient.println(success);
                             break;
+                        case 33:
+                            if (cmdWords.length < 2) {
+                                toClient.println("ERROR : wrong arguments");
+                                break;
+                            }
+                            success = decreaseReservableItemCount(Integer.parseInt(cmdWords[1]), cmdWords[2], Integer.parseInt(cmdWords[3]));
+                            if (success) toClient.println("true");
+                            else toClient.println("false");
+                            break;
                         default:
                             toClient.println("ERROR :  Command " + cmdWords[0] + " not supported");
                             break;
@@ -396,6 +405,8 @@ public class ResourceManagerRunnable implements Runnable, ResourceManager {
             choice = 31;
         else if (cmdWords[0].compareToIgnoreCase("isexistingrooms") == 0)
             choice = 32;
+        else if (cmdWords[0].compareToIgnoreCase("decreasereservableitemcount") == 0)
+            choice = 33;
         else
         choice = -1;
         return choice;
@@ -948,4 +959,19 @@ public class ResourceManagerRunnable implements Runnable, ResourceManager {
 
         return true;
     }
+
+    public boolean decreaseReservableItemCount(int id, String key, int count) {
+        ReservableItem item =
+                (ReservableItem) readData(id, key);
+        if (item == null) {
+            Trace.info("no such item, cannot increase count");
+            return false;
+        }
+        item.setReserved(item.getReserved() + count);
+        item.setCount(item.getCount() - count);
+        Trace.info("item reserved: " + item.getReserved() + "    item count: " + item.getCount());
+
+        return true;
+    }
+
 }

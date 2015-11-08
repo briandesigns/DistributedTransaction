@@ -945,12 +945,74 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
 
             Trace.info("RM::deleteCustomer(" + id + ", " + customerId + ") failed. one of the reservedItem could not be updated");
             return false;
-
-
             // Remove the customer from the storage.
-
         }
     }
+    //todo: test if this feature works or not
+    public boolean undoDeleteCustomer(int id, int customerId) {
+        Customer targetCust = null;
+        for (int i = 0; i < tm.customers.size(); i++) {
+            if (tm.customers.get(i).getId() == customerId) {
+                targetCust = tm.customers.get(i);
+            }
+        }
+        writeData(id, targetCust.getKey(), targetCust);
+        RMHashtable reservationHT = targetCust.getReservations();
+        for (Enumeration e = reservationHT.keys(); e.hasMoreElements(); ) {
+            String reservedKey = (String) (e.nextElement());
+            ReservedItem reservedItem = targetCust.getReservedItem(reservedKey);
+            Trace.info("RM::deleteCustomer(" + id + ", " + customerId + "): "
+                    + "deleting " + reservedItem.getCount() + " reservations "
+                    + "for item " + reservedItem.getKey());
+            if(reservedItem.getKey().contains("flight-")) {
+                toFlight.println("decreaseReservableItemCount," + id + "," + reservedItem.getKey() + "," + reservedItem.getCount());
+                try {
+                    String line = fromFlight.readLine();
+                    if (line.contains("true")) {
+
+                        Trace.info("reserved item increased");
+                    } else {
+                        Trace.info("reserved item count cannot be increased");
+                    }
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
+            } else if (reservedItem.getKey().contains("car-")) {
+                toCar.println("decreaseReservableItemCount," + id + "," + reservedItem.getKey() + "," + reservedItem.getCount());
+                try {
+                    String line = fromCar.readLine();
+                    if (line.contains("true")) {
+                        Trace.info("reserved item increased");
+                    } else {
+                        Trace.info("reserved item count cannot be increased");
+
+                    }
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
+
+            } else if (reservedItem.getKey().contains("room")) {
+                toRoom.println("decreaseReservableItemCount," + id + "," + reservedItem.getKey() + "," + reservedItem.getCount());
+                try {
+                    String line = fromRoom.readLine();
+                    if (line.contains("true")) {
+                        Trace.info("reserved item increased");
+                    } else{
+                        Trace.info("reserved item count cannot be increased");
+
+                    }
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
+
+            } else {
+                Trace.info("reserved item does not exist");
+            }
+        }
+
+        return false;
+    }
+
 
     // Return data structure containing customer reservation info.
     // Returns null if the customer doesn't exist.

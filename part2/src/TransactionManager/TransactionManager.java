@@ -6,37 +6,16 @@ import ResourceManager.TCPServer;
 import ResourceManager.ResourceManager;
 import ResourceManager.Customer;
 import ResourceManager.RMHashtable;
-
 import ResourceManager.MiddlewareRunnable;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.Vector;
 
-/**
- * PLAN
- * TM keeps a counter and a boolean activeTransaction
- * middleware's client interface once receives start(), actives TM counter and turn activeTransaction to true
- * while the activeTransaction is still true, route all client calls to TM.op()
- * if mw does not receive a client call before tm.counter expires, then TM abort and turn activeTransaction to false
- * before any client add() is executed, TM first read that data and save its location, count, price
- * then perform the add()
- * if abort, add(location, -count, price) (this command can be saved into a table of things that need to be executed on abort())
- * <p/>
- * before any client delete() is executed, TM first query(), queryPrice(), queryReserved()(not implemented), and save location, count, price, reserved
- * then perform delete(), which deletes also customer reservations as well?
- * if abort, add(location, count, price, reserved), add back customer reservations on those items? (saved into a table of things that need to be executed on abort())
- * <p/>
- * before any client reserve() is executed, TM first query(), queryPrice(), queryReserved(), and save ito location, count, price, reserved
- * then  perform reserve()
- * if abort, add(location, +1, price, -1), delete client reservedItem (save this into a  table of things that need to be executed on abort())
- * <p/>
- * itinerary should be just implemented as a transaction itself
- * <p/>
- * the list of things that needs to be executed on abort() should just be a list of commands to feed to run() of middleware
- */
 public class TransactionManager implements ResourceManager {
     public static RMHashtable transactionTable;
+    public ArrayList<Customer> customers;
     private ArrayList<String> undoStack;
     private int currentActiveTransactionID;
     public static final int UNUSED_TRANSACTION_ID = -1;
@@ -89,6 +68,7 @@ public class TransactionManager implements ResourceManager {
     public TransactionManager(MiddlewareRunnable myMWRunnable) {
         this.myMWRunnable = myMWRunnable;
         this.undoStack = new ArrayList<String>();
+        this.customers = new ArrayList<Customer>();
     }
 
     private boolean undoAll() {
@@ -119,21 +99,18 @@ public class TransactionManager implements ResourceManager {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-            } else if (line.toLowerCase().contains("customer")) {
+            } else if (line.toLowerCase().contains("undodeletecustomer")) {
                 String[] cmdWords = line.split(",");
-                int choice = myMWRunnable.findChoice(cmdWords);
-                switch (choice) {
-                    case 9:
-                        //todo: check if this is correct
-                        result = myMWRunnable.deleteCustomer(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]));
-                        break;
-                    case 22:
-                        //todo: check if this is correct
-                        result = myMWRunnable.newCustomerId(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]));
-                        break;
-                }
+                result = myMWRunnable.undoDeleteCustomer(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]));
+            } else if (line.toLowerCase().contains("deletecustomer")) {
+                String[] cmdWords = line.split(",");
+                result = myMWRunnable.deleteCustomer(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]));
+
+            } else if (line.toLowerCase().contains("unreserveflight")) {
+                String[] cmdWords = line.split(",");
+                result = unreserveFlight(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]), Integer.parseInt(cmdWords[3]));
             } else
-                ;
+            ;
         }
         return result;
     }
@@ -156,9 +133,10 @@ public class TransactionManager implements ResourceManager {
         setInTransaction(false);
         boolean result = undoAll();
         transactionTable.remove(this.currentActiveTransactionID);
-        TCPServer.lm.UnlockAll(currentActiveTransactionID);
         currentActiveTransactionID = UNUSED_TRANSACTION_ID;
         this.undoStack = new ArrayList<String>();
+        this.customers = new ArrayList<Customer>();
+        TCPServer.lm.UnlockAll(currentActiveTransactionID);
         System.out.println("abort() call ended and returns: " + result);
         return result;
     }
@@ -167,9 +145,10 @@ public class TransactionManager implements ResourceManager {
         stopTTLCountDown();
         setInTransaction(false);
         transactionTable.remove(this.currentActiveTransactionID);
-        TCPServer.lm.UnlockAll(currentActiveTransactionID);
         currentActiveTransactionID = UNUSED_TRANSACTION_ID;
         this.undoStack = new ArrayList<String>();
+        this.customers = new ArrayList<Customer>();
+        TCPServer.lm.UnlockAll(currentActiveTransactionID);
         return true;
     }
 
@@ -513,25 +492,49 @@ public class TransactionManager implements ResourceManager {
             }
             this.currentActiveTransactionID = id;
             Customer cust = ((Customer) myMWRunnable.readData(id, Customer.getKey(customerId)));
-            //todo: store the customer into an arraylist so that it could be readded if abort
-            //todo: in undo routine, add back the customer, iterate through customer reservations and increment reserved and decrement count
+            customers.add(cust);
+            String cmdWords = "undoDeleteCustomer" + "," + id + "," + customerId;
+            undoStack.add(cmdWords);
+            return myMWRunnable.deleteCustomer(id, customerId);
         } catch (DeadlockException e) {
             e.printStackTrace();
+            abort();
+            return false;
         }
-        return false;
     }
+
 
     @Override
     public String queryCustomerInfo(int id, int customerId) {
-        return null;
+        try {
+            if(!(TCPServer.lm.Lock(id, CUSTOMER, customerId))) {
+                return "can't get customer Info";
+            }
+            return myMWRunnable.queryCustomerInfo(id, customerId);
+        } catch (DeadlockException e) {
+            e.printStackTrace();
+            abort();
+            return "can't get customer Info";
+        }
     }
 
     @Override
     public boolean reserveFlight(int id, int customerId, int flightNumber) {
+        try {
+            if (!(TCPServer.lm.Lock(id, CUSTOMER, LockManager.WRITE) && TCPServer.lm.Lock(id, FLIGHT, LockManager.WRITE))) {
+                return false;
+            }
+            undoStack.add("unreserveFlight" + "," + id + "," + customerId + "," + flightNumber);
+            return myMWRunnable.reserveFlight(id, customerId, flightNumber);
+        } catch (DeadlockException e) {
+            abort();
+            return false;
+        }
+    }
+
+    //todo: unreserveflight(customerId,flightNumber): adjust count and reserved for flight, and calls customer.unreserve()
+    private boolean unreserveFlight(int id, int customerId, int flightNumber) {
         return false;
-        //todo: save customer id into an arraylist so that it can be refound when aborting
-        //todo: in undo routine, find the customer,call unreserveflight(customerId,flightNumber)
-        //todo: unreserveflight(customerId,flightNumber): adjust count and reserved for flight, and calls customer.unreserve()
     }
 
     @Override
@@ -555,6 +558,5 @@ public class TransactionManager implements ResourceManager {
     @Override
     public boolean increaseReservableItemCount(int id, String key, int count) {
         return false;
-        //todo: check how the middlewareversion works first, then check hwo to implement this
     }
 }
