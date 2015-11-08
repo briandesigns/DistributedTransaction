@@ -537,20 +537,24 @@ public class TransactionManager implements ResourceManager {
     @Override
     public boolean reserveCar(int id, int customerId, String location) {
         return false;
+        //todo: check reserveflight
     }
 
     @Override
     public boolean reserveRoom(int id, int customerId, String location) {
         return false;
+        //todo: check reserveFlight
     }
 
     @Override
     public boolean reserveItinerary(int id, int customerId, Vector flightNumbers, String location, boolean car, boolean room) {
         return false;
+        //todo: need to figure how to do this
     }
 
     @Override
     public boolean increaseReservableItemCount(int id, String key, int count) {
         return false;
+        //todo: check how the middlewareversion works first, then check hwo to implement this
     }
 }
