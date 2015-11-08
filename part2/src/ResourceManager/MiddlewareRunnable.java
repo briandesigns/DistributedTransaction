@@ -355,7 +355,7 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
         }
     }
 
-    private int findChoice(String[] cmdWords) {
+    public int findChoice(String[] cmdWords) {
         int choice =-1;
 
         if (cmdWords[0].compareToIgnoreCase("help") == 0)
@@ -417,7 +417,7 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
     // Basic operations on ResourceManager.RMItem //
 
     // Read a data item.
-    private RMItem readData(int id, String key) {
+    public RMItem readData(int id, String key) {
         synchronized (TCPServer.m_itemHT_customer) {
             return (RMItem) TCPServer.m_itemHT_customer.get(key);
         }
@@ -486,6 +486,7 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
         return value;
     }
 
+
     // Reserve an item.
     protected boolean reserveItem(int id, int customerId,
                                   String key, String location) throws Exception {
@@ -547,6 +548,13 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
 
     // ResourceManager.Flight operations //
 
+    public boolean isExistingCustomer(int id, int customerId) {
+        Trace.info("RM::isExistingCustomer(" + id + ", " + customerId);
+        Customer curObj = (Customer) readData(id, Customer.getKey(customerId));
+        if (curObj == null) {
+            return false;
+        } else return true;
+    }
     public boolean isExistingFlight(int id, int flightNumber) {
         toFlight.println("isExistingFlight" + "," + id + "," + flightNumber);
         String line = null;
