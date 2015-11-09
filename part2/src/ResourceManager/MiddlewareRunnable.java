@@ -315,7 +315,7 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                         break;
                     case 24:
                         if (tm.isInTransaction()) {
-                            if (tm.abort(0)) {
+                            if (tm.abort()) {
                                 toClient.println("transaction successfully aborted");
                                 System.out.println("transaction aborted");
                             } else {
@@ -328,7 +328,7 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                         }
                         break;
                     case 25:
-                        if (tm.commit(0)) {
+                        if (tm.commit()) {
                             toClient.println("transaction successfully committed");
                         } else toClient.println("transaction commit error, transaction aborted");
                         break;
@@ -1151,7 +1151,7 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
             TCPServer.lm.Lock(id, localTM.CAR, LockManager.WRITE);
             TCPServer.lm.Lock(id, localTM.ROOM, LockManager.WRITE);
         } catch (DeadlockException e) {
-            localTM.abort(0);
+            localTM.abort();
             return false;
         }
 
@@ -1179,8 +1179,8 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
             }
         }
 
-        if (isSuccessfulReservation) localTM.commit(0);
-        else localTM.abort(0);
+        if (isSuccessfulReservation) localTM.commit();
+        else localTM.abort();
         TCPServer.lm.UnlockAll(id);
         return isSuccessfulReservation;
     }

@@ -62,7 +62,7 @@ public class TransactionManager implements ResourceManager {
             public void run() {
                 try {
                     Thread.currentThread().sleep(TTL_MS);
-                    abort(0);
+                    abort();
                 } catch (InterruptedException e) {
                     System.out.println("TTL renewed");
                 }
@@ -146,7 +146,7 @@ public class TransactionManager implements ResourceManager {
 
     }
 
-    public boolean abort(int XID) {
+    public boolean abort() {
         stopTTLCountDown();
         setInTransaction(false);
         boolean result = undoAll();
@@ -159,7 +159,7 @@ public class TransactionManager implements ResourceManager {
         return result;
     }
 
-    public boolean commit(int XID) {
+    public boolean commit() {
         stopTTLCountDown();
         setInTransaction(false);
         transactionTable.remove(this.currentActiveTransactionID);
@@ -201,7 +201,7 @@ public class TransactionManager implements ResourceManager {
         } catch (DeadlockException e) {
 //            e.printStackTrace();
             System.out.println("TM ADDFLIGHT DEADLOCK JUST ABORTED, ABOUT TO RETURN FALSE");
-            abort(0);
+            abort();
             return false;
         }
     }
@@ -233,7 +233,7 @@ public class TransactionManager implements ResourceManager {
             return myMWRunnable.deleteFlight(id, flightNumber);
         } catch (DeadlockException e) {
             e.printStackTrace();
-            abort(0);
+            abort();
             return false;
         }
     }
@@ -252,7 +252,7 @@ public class TransactionManager implements ResourceManager {
             return myMWRunnable.queryFlight(id, flightNumber);
         } catch (DeadlockException e) {
             e.printStackTrace();
-            abort(0);
+            abort();
             return -2;
         }
     }
@@ -271,7 +271,7 @@ public class TransactionManager implements ResourceManager {
             return myMWRunnable.queryFlightPrice(id, flightNumber);
         } catch (DeadlockException e) {
             e.printStackTrace();
-            abort(0);
+            abort();
             return -2;
         }
     }
@@ -306,7 +306,7 @@ public class TransactionManager implements ResourceManager {
             return myMWRunnable.addCars(id, location, numCars, carPrice);
         } catch (DeadlockException e) {
             e.printStackTrace();
-            abort(0);
+            abort();
             return false;
         }
     }
@@ -336,7 +336,7 @@ public class TransactionManager implements ResourceManager {
             return myMWRunnable.deleteCars(id, location);
         } catch (DeadlockException e) {
             e.printStackTrace();
-            abort(0);
+            abort();
             return false;
         }
     }
@@ -355,7 +355,7 @@ public class TransactionManager implements ResourceManager {
             return myMWRunnable.queryCars(id, location);
         } catch (DeadlockException e) {
             e.printStackTrace();
-            abort(0);
+            abort();
             return -1;
         }
     }
@@ -374,7 +374,7 @@ public class TransactionManager implements ResourceManager {
             return myMWRunnable.queryCarsPrice(id, location);
         } catch (DeadlockException e) {
             e.printStackTrace();
-            abort(0);
+            abort();
             return -2;
         }
     }
@@ -408,7 +408,7 @@ public class TransactionManager implements ResourceManager {
             return myMWRunnable.addRooms(id, location, numRooms, roomPrice);
         } catch (DeadlockException e) {
             e.printStackTrace();
-            abort(0);
+            abort();
             return false;
         }
     }
@@ -438,7 +438,7 @@ public class TransactionManager implements ResourceManager {
             return myMWRunnable.deleteRooms(id, location);
         } catch (DeadlockException e) {
             e.printStackTrace();
-            abort(0);
+            abort();
             return false;
         }
     }
@@ -457,7 +457,7 @@ public class TransactionManager implements ResourceManager {
             return myMWRunnable.queryRooms(id, location);
         } catch (DeadlockException e) {
             e.printStackTrace();
-            abort(0);
+            abort();
             return -2;
         }
     }
@@ -476,7 +476,7 @@ public class TransactionManager implements ResourceManager {
             return myMWRunnable.queryRoomsPrice(id, location);
         } catch (DeadlockException e) {
             e.printStackTrace();
-            abort(0);
+            abort();
             return -2;
         }
     }
@@ -508,7 +508,7 @@ public class TransactionManager implements ResourceManager {
             return value;
         } catch (DeadlockException e) {
 //            e.printStackTrace();
-            abort(0);
+            abort();
             return -2;
         }
     }
@@ -540,7 +540,7 @@ public class TransactionManager implements ResourceManager {
             return success;
         } catch (DeadlockException e) {
 //            e.printStackTrace();
-            abort(0);
+            abort();
             return false;
         }
     }
@@ -567,7 +567,7 @@ public class TransactionManager implements ResourceManager {
             return myMWRunnable.deleteCustomer(id, customerId);
         } catch (DeadlockException e) {
             e.printStackTrace();
-            abort(0);
+            abort();
             return false;
         }
     }
@@ -587,7 +587,7 @@ public class TransactionManager implements ResourceManager {
             return myMWRunnable.queryCustomerInfo(id, customerId);
         } catch (DeadlockException e) {
             e.printStackTrace();
-            abort(0);
+            abort();
             return "can't get customer Info";
         }
     }
@@ -606,7 +606,7 @@ public class TransactionManager implements ResourceManager {
             undoStack.add("unreserveItem" + "," + id + "," + customerId + "," + Flight.getKey(flightNumber) + "," + flightNumber);
             return myMWRunnable.reserveFlight(id, customerId, flightNumber);
         } catch (DeadlockException e) {
-            abort(0);
+            abort();
             return false;
         }
     }
@@ -625,7 +625,7 @@ public class TransactionManager implements ResourceManager {
             undoStack.add("unreserveItem" + "," + id + "," + customerId + "," + Car.getKey(location) + "," + location);
             return myMWRunnable.reserveCar(id, customerId, location);
         } catch (DeadlockException e) {
-            abort(0);
+            abort();
             return false;
         }
     }
@@ -644,7 +644,7 @@ public class TransactionManager implements ResourceManager {
             undoStack.add("unreserveItem" + "," + id + "," + customerId + "," + Room.getKey(location) + "," + location);
             return myMWRunnable.reserveRoom(id, customerId, location);
         } catch (DeadlockException e) {
-            abort(0);
+            abort();
             return false;
         }
     }
@@ -664,7 +664,7 @@ public class TransactionManager implements ResourceManager {
                 return false;
             }
         } catch (DeadlockException e) {
-            abort(0);
+            abort();
             return false;
         }
 
@@ -692,8 +692,8 @@ public class TransactionManager implements ResourceManager {
             }
         }
 
-        if (isSuccessfulReservation) commit(0);
-        else abort(0);
+        if (isSuccessfulReservation) commit();
+        else abort();
         return isSuccessfulReservation;
     }
 
