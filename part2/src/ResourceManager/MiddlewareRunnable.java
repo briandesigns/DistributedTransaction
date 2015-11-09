@@ -2,7 +2,7 @@ package ResourceManager;
 
 
 import TransactionManager.TransactionManager;
-
+import LockManager.*;
 import java.io.*;
 import java.net.*;
 import java.util.Calendar;
@@ -219,8 +219,8 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                             break;
                         }
                         if(!tm.isInTransaction())
-                            value= queryFlight(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]));
-                        else value = tm.queryFlight(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]));
+                            value= queryFlightPrice(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]));
+                        else value = tm.queryFlightPrice(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]));
                         toClient.println(value);
                         break;
                     case 15:
@@ -279,7 +279,6 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                         else toClient.println("false");
                         break;
                     case 20:
-                        //todo: look into this and see if its handled appropriately
                         int numFlights = Integer.parseInt(cmdWords[1]);
                         int id = Integer.parseInt(cmdWords[2]);
                         int customerId = Integer.parseInt(cmdWords[3]);
@@ -486,6 +485,62 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
         return value;
     }
 
+
+    public boolean unreserveItem(int id, int customerId, String key, String location) throws IOException {
+        Trace.info("RM::reserveItem(" + id + ", " + customerId + ", "
+                + key + ", " + location + ") called.");
+        // Read customer object if it exists (and read lock it).
+        Customer cust = (Customer) readData(id, Customer.getKey(customerId));
+        if (cust == null) {
+            Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", "
+                    + key + ", " + location + ") failed: customer doesn't exist.");
+            return false;
+        }
+        //Check for item availability and getting price
+        boolean isSuccessfulReservation = false;
+        int itemPrice = -1;
+        if (key.contains("car-")) {
+            Trace.info("got here");
+            toCar.println("increaseReservableItemCount," + id + "," + key + "," + "1");
+            if (fromCar.readLine().contains("true")) {
+                isSuccessfulReservation = true;
+                toCar.println("queryCarsPrice," + id + "," + location);
+                itemPrice = Integer.parseInt(fromCar.readLine());
+            }
+        } else if (key.contains("flight-")) {
+            toFlight.println("increaseReservableItemCount," + id + "," + key + "," + "1");
+            if (fromFlight.readLine().contains("true")) {
+                isSuccessfulReservation = true;
+                toFlight.println("queryFlightPrice," + id + "," + location);
+                itemPrice = Integer.parseInt(fromFlight.readLine());
+            }
+        } else if (key.contains("room-")) {
+            toRoom.println("increaseReservableItemCount," + id + "," + key + "," + "1");
+            if (fromRoom.readLine().contains("true")) {
+                isSuccessfulReservation = true;
+                toRoom.println("queryRoomsPrice," + id + "," + location);
+                itemPrice = Integer.parseInt(fromRoom.readLine());
+            }
+        } else {
+            ;
+        }
+        // Check if the item is available.
+        if (!isSuccessfulReservation) {
+            Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", "
+                    + key + ", " + location + ") failed: item doesn't exist or no more items.");
+            return false;
+        } else {
+            // Do reservation.
+
+            cust.unReserve(key);
+            //this should be redundant code
+            writeData(id, cust.getKey(), cust);
+
+            Trace.warn("RM::reserveItem(" + id + ", " + customerId + ", "
+                    + key + ", " + location + ") OK.");
+            return true;
+        }
+    }
 
     // Reserve an item.
     protected boolean reserveItem(int id, int customerId,
@@ -948,7 +1003,7 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
             // Remove the customer from the storage.
         }
     }
-    //todo: test if this feature works or not
+
     public boolean undoDeleteCustomer(int id, int customerId) {
         Customer targetCust = null;
         for (int i = 0; i < tm.customers.size(); i++) {
@@ -1010,7 +1065,7 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
             }
         }
 
-        return false;
+        return true;
     }
 
 
@@ -1039,7 +1094,7 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
             Trace.warn("RM::queryCustomerInfo(" + id + ", "
                     + customerId + ") failed: customer doesn't exist.");
             // Returning an empty bill means that the customer doesn't exist.
-            return "";
+            return "customer does not exist";
         } else {
             String s = cust.printBill();
             Trace.info("RM::queryCustomerInfo(" + id + ", " + customerId + "): \n");
@@ -1087,18 +1142,46 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
     @Override
     public boolean reserveItinerary(int id, int customerId, Vector flightNumbers,
                                     String location, boolean car, boolean room) {
+
+        TransactionManager localTM = new TransactionManager(MiddlewareRunnable.this);
+        localTM.start();
+        try {
+            TCPServer.lm.Lock(id, localTM.CUSTOMER, LockManager.WRITE);
+            TCPServer.lm.Lock(id, localTM.FLIGHT, LockManager.WRITE);
+            TCPServer.lm.Lock(id, localTM.CAR, LockManager.WRITE);
+            TCPServer.lm.Lock(id, localTM.ROOM, LockManager.WRITE);
+        } catch (DeadlockException e) {
+            localTM.abort();
+            return false;
+        }
+
+
         Iterator it = flightNumbers.iterator();
 
-        boolean isSuccessfulReservation = false;
+        boolean isSuccessfulReservation = true;
         while (it.hasNext()) {
             try {
-                isSuccessfulReservation = reserveFlight(id, customerId, getInt(it.next()));
+                if(!localTM.reserveFlight(id, customerId, getInt(it.next()))) {
+                    isSuccessfulReservation = false;
+                }
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
-        if (car) isSuccessfulReservation = reserveCar(id, customerId, location);
-        if (room) isSuccessfulReservation = reserveRoom(id, customerId, location);
+        if (car) {
+            if(!localTM.reserveCar(id, customerId, location)) {
+                isSuccessfulReservation = false;
+            }
+        }
+        if (room) {
+            if(!localTM.reserveRoom(id, customerId, location)) {
+                isSuccessfulReservation = false;
+            }
+        }
+
+        if (isSuccessfulReservation) localTM.commit();
+        else localTM.abort();
+        TCPServer.lm.UnlockAll(id);
         return isSuccessfulReservation;
     }
 

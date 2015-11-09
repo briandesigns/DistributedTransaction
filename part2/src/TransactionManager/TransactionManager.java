@@ -1,5 +1,6 @@
 package TransactionManager;
 
+import ResourceManager.*;
 import LockManager.*;
 import LockManager.LockManager;
 import ResourceManager.TCPServer;
@@ -11,8 +12,10 @@ import ResourceManager.MiddlewareRunnable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.Vector;
-
+//todo: shutdowns
+//todo: implement unique xid
 public class TransactionManager implements ResourceManager {
     public static RMHashtable transactionTable;
     public ArrayList<Customer> customers;
@@ -75,7 +78,14 @@ public class TransactionManager implements ResourceManager {
         boolean result = true;
         for (int i = this.undoStack.size() - 1; i >= 0; i--) {
             String line = undoStack.get(i);
-            if (line.toLowerCase().contains("flight")) {
+            if (line.toLowerCase().contains("unreserve")) {
+                String[] cmdWords = line.split(",");
+                try {
+                    result = myMWRunnable.unreserveItem(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]), (cmdWords[3]), (cmdWords[4]));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            } else if (line.toLowerCase().contains("flight")) {
                 myMWRunnable.toFlight.println(line);
                 try {
                     if (myMWRunnable.fromFlight.readLine().toLowerCase().contains("false"))
@@ -106,11 +116,9 @@ public class TransactionManager implements ResourceManager {
                 String[] cmdWords = line.split(",");
                 result = myMWRunnable.deleteCustomer(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]));
 
-            } else if (line.toLowerCase().contains("unreserveflight")) {
-                String[] cmdWords = line.split(",");
-                result = unreserveFlight(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]), Integer.parseInt(cmdWords[3]));
             } else
-            ;
+                ;
+
         }
         return result;
     }
@@ -137,7 +145,7 @@ public class TransactionManager implements ResourceManager {
         this.undoStack = new ArrayList<String>();
         this.customers = new ArrayList<Customer>();
         TCPServer.lm.UnlockAll(currentActiveTransactionID);
-        System.out.println("abort() call ended and returns: " + result);
+        System.out.println("abort() call ended and undoAll() successful:" + result);
         return result;
     }
 
@@ -487,11 +495,16 @@ public class TransactionManager implements ResourceManager {
     @Override
     public boolean deleteCustomer(int id, int customerId) {
         try {
+            renewTTLCountDown();
             if (!(TCPServer.lm.Lock(id, CUSTOMER, LockManager.WRITE) && (TCPServer.lm.Lock(id, CAR, LockManager.WRITE) && TCPServer.lm.Lock(id, FLIGHT, LockManager.WRITE) && TCPServer.lm.Lock(id, ROOM, LockManager.WRITE)))) {
                 return false;
             }
             this.currentActiveTransactionID = id;
             Customer cust = ((Customer) myMWRunnable.readData(id, Customer.getKey(customerId)));
+            if (cust == null) {
+                System.out.println("customer does not exist. failed to delete customer");
+                return false;
+            }
             customers.add(cust);
             String cmdWords = "undoDeleteCustomer" + "," + id + "," + customerId;
             undoStack.add(cmdWords);
@@ -507,7 +520,8 @@ public class TransactionManager implements ResourceManager {
     @Override
     public String queryCustomerInfo(int id, int customerId) {
         try {
-            if(!(TCPServer.lm.Lock(id, CUSTOMER, customerId))) {
+            renewTTLCountDown();
+            if (!(TCPServer.lm.Lock(id, CUSTOMER, customerId))) {
                 return "can't get customer Info";
             }
             return myMWRunnable.queryCustomerInfo(id, customerId);
@@ -521,10 +535,11 @@ public class TransactionManager implements ResourceManager {
     @Override
     public boolean reserveFlight(int id, int customerId, int flightNumber) {
         try {
+            renewTTLCountDown();
             if (!(TCPServer.lm.Lock(id, CUSTOMER, LockManager.WRITE) && TCPServer.lm.Lock(id, FLIGHT, LockManager.WRITE))) {
                 return false;
             }
-            undoStack.add("unreserveFlight" + "," + id + "," + customerId + "," + flightNumber);
+            undoStack.add("unreserveItem" + "," + id + "," + customerId + "," + Flight.getKey(flightNumber) + "," + flightNumber);
             return myMWRunnable.reserveFlight(id, customerId, flightNumber);
         } catch (DeadlockException e) {
             abort();
@@ -532,27 +547,78 @@ public class TransactionManager implements ResourceManager {
         }
     }
 
-    //todo: unreserveflight(customerId,flightNumber): adjust count and reserved for flight, and calls customer.unreserve()
-    private boolean unreserveFlight(int id, int customerId, int flightNumber) {
-        return false;
-    }
-
     @Override
     public boolean reserveCar(int id, int customerId, String location) {
-        return false;
-        //todo: check reserveflight
+        try {
+            renewTTLCountDown();
+            if (!(TCPServer.lm.Lock(id, CUSTOMER, LockManager.WRITE) && TCPServer.lm.Lock(id, CAR, LockManager.WRITE))) {
+                return false;
+            }
+            undoStack.add("unreserveItem" + "," + id + "," + customerId + "," + Car.getKey(location) + "," + location);
+            return myMWRunnable.reserveCar(id, customerId, location);
+        } catch (DeadlockException e) {
+            abort();
+            return false;
+        }
     }
 
     @Override
     public boolean reserveRoom(int id, int customerId, String location) {
-        return false;
-        //todo: check reserveFlight
+        try {
+            renewTTLCountDown();
+            if (!(TCPServer.lm.Lock(id, CUSTOMER, LockManager.WRITE) && TCPServer.lm.Lock(id, ROOM, LockManager.WRITE))) {
+                return false;
+            }
+            undoStack.add("unreserveItem" + "," + id + "," + customerId + "," + Room.getKey(location) + "," + location);
+            return myMWRunnable.reserveRoom(id, customerId, location);
+        } catch (DeadlockException e) {
+            abort();
+            return false;
+        }
     }
 
     @Override
     public boolean reserveItinerary(int id, int customerId, Vector flightNumbers, String location, boolean car, boolean room) {
-        return false;
-        //todo: need to figure how to do this
+        try {
+            renewTTLCountDown();
+            if(!(TCPServer.lm.Lock(id, CUSTOMER, LockManager.WRITE) &&
+            TCPServer.lm.Lock(id, FLIGHT, LockManager.WRITE) &&
+            TCPServer.lm.Lock(id, CAR, LockManager.WRITE) &&
+            TCPServer.lm.Lock(id, ROOM, LockManager.WRITE))) {
+                return false;
+            }
+        } catch (DeadlockException e) {
+            abort();
+            return false;
+        }
+
+
+        Iterator it = flightNumbers.iterator();
+
+        boolean isSuccessfulReservation = true;
+        while (it.hasNext()) {
+            try {
+                if(reserveFlight(id, customerId, myMWRunnable.getInt(it.next()))) {
+                    isSuccessfulReservation = false;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        if (car) {
+            if(reserveCar(id, customerId, location)) {
+                isSuccessfulReservation = false;
+            }
+        }
+        if (room) {
+            if(reserveRoom(id, customerId, location)) {
+                isSuccessfulReservation = false;
+            }
+        }
+
+        if (isSuccessfulReservation) commit();
+        else abort();
+        return isSuccessfulReservation;
     }
 
     @Override

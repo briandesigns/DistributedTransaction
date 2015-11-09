@@ -167,7 +167,7 @@ public class ResourceManagerRunnable implements Runnable, ResourceManager {
                                 toClient.println("ERROR : wrong arguments");
                                 break;
                             }
-                            value = queryFlight(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]));
+                            value = queryFlightPrice(Integer.parseInt(cmdWords[1]), Integer.parseInt(cmdWords[2]));
                             toClient.println(value);
                             break;
                         case 15:
