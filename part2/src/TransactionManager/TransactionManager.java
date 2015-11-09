@@ -15,11 +15,11 @@ import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Vector;
 //todo: shutdowns
-//todo: implement unique xid
 public class TransactionManager implements ResourceManager {
     public static RMHashtable transactionTable;
     public ArrayList<Customer> customers;
     private ArrayList<String> undoStack;
+    private static int uniqueTransactionID = 0;
     private int currentActiveTransactionID;
     public static final int UNUSED_TRANSACTION_ID = -1;
     private MiddlewareRunnable myMWRunnable;
@@ -37,6 +37,10 @@ public class TransactionManager implements ResourceManager {
 
     private void setInTransaction(boolean decision) {
         this.inTransaction = decision;
+    }
+
+    public int getCurrentActiveTransactionID() {
+        return currentActiveTransactionID;
     }
 
     public boolean isInTransaction() {
@@ -58,7 +62,7 @@ public class TransactionManager implements ResourceManager {
             public void run() {
                 try {
                     Thread.currentThread().sleep(TTL_MS);
-                    abort();
+                    abort(0);
                 } catch (InterruptedException e) {
                     System.out.println("TTL renewed");
                 }
@@ -72,6 +76,11 @@ public class TransactionManager implements ResourceManager {
         this.myMWRunnable = myMWRunnable;
         this.undoStack = new ArrayList<String>();
         this.customers = new ArrayList<Customer>();
+    }
+
+    private static synchronized int generateUniqueXID() {
+        uniqueTransactionID++;
+        return uniqueTransactionID;
     }
 
     private boolean undoAll() {
@@ -127,7 +136,8 @@ public class TransactionManager implements ResourceManager {
         if (!isInTransaction()) {
             startTTLCountDown();
             setInTransaction(true);
-            System.out.println("transaction started");
+            currentActiveTransactionID = generateUniqueXID();
+            System.out.println("transaction started with XID: " + currentActiveTransactionID);
             return true;
         } else {
             System.out.println("nothing to start, already in transaction");
@@ -136,7 +146,7 @@ public class TransactionManager implements ResourceManager {
 
     }
 
-    public boolean abort() {
+    public boolean abort(int XID) {
         stopTTLCountDown();
         setInTransaction(false);
         boolean result = undoAll();
@@ -149,7 +159,7 @@ public class TransactionManager implements ResourceManager {
         return result;
     }
 
-    public boolean commit() {
+    public boolean commit(int XID) {
         stopTTLCountDown();
         setInTransaction(false);
         transactionTable.remove(this.currentActiveTransactionID);
@@ -167,7 +177,10 @@ public class TransactionManager implements ResourceManager {
             if (!TCPServer.lm.Lock(id, FLIGHT, LockManager.WRITE)) {
                 return false;
             }
-            this.currentActiveTransactionID = id;
+            if (this.currentActiveTransactionID != id) {
+                System.out.println("transaction id does not match current transaction, command ignored");
+                return false;
+            }
             String undoCmd;
             if (myMWRunnable.isExistingFlight(id, flightNumber)) {
                 undoCmd = "undoAddFlight," + id + "," + flightNumber + "," + myMWRunnable.queryFlight(id, flightNumber) + "," + myMWRunnable.queryFlightPrice(id, flightNumber) + "," + myMWRunnable.queryFlightReserved(id, flightNumber);
@@ -188,7 +201,7 @@ public class TransactionManager implements ResourceManager {
         } catch (DeadlockException e) {
 //            e.printStackTrace();
             System.out.println("TM ADDFLIGHT DEADLOCK JUST ABORTED, ABOUT TO RETURN FALSE");
-            abort();
+            abort(0);
             return false;
         }
     }
@@ -201,7 +214,11 @@ public class TransactionManager implements ResourceManager {
             if (!TCPServer.lm.Lock(id, FLIGHT, LockManager.WRITE)) {
                 return false;
             }
-            this.currentActiveTransactionID = id;
+            if (this.currentActiveTransactionID != id) {
+                System.out.println("transaction id does not match current transaction, command ignored");
+                return false;
+            }
+
             if (myMWRunnable.isExistingFlight(id, flightNumber)) {
                 String undoCmd = "undoAddFlight," + id + "," + flightNumber + "," + myMWRunnable.queryFlight(id, flightNumber) + "," + myMWRunnable.queryFlightPrice(id, flightNumber) + "," + myMWRunnable.queryFlightReserved(id, flightNumber);
                 undoStack.add(undoCmd);
@@ -216,7 +233,7 @@ public class TransactionManager implements ResourceManager {
             return myMWRunnable.deleteFlight(id, flightNumber);
         } catch (DeadlockException e) {
             e.printStackTrace();
-            abort();
+            abort(0);
             return false;
         }
     }
@@ -228,11 +245,14 @@ public class TransactionManager implements ResourceManager {
             if (!TCPServer.lm.Lock(id, FLIGHT, LockManager.READ)) {
                 return -2;
             }
-            this.currentActiveTransactionID = id;
+            if (this.currentActiveTransactionID != id) {
+                System.out.println("transaction id does not match current transaction, command ignored");
+                return -3;
+            }
             return myMWRunnable.queryFlight(id, flightNumber);
         } catch (DeadlockException e) {
             e.printStackTrace();
-            abort();
+            abort(0);
             return -2;
         }
     }
@@ -244,11 +264,14 @@ public class TransactionManager implements ResourceManager {
             if (!TCPServer.lm.Lock(id, FLIGHT, LockManager.READ)) {
                 return -2;
             }
-            this.currentActiveTransactionID = id;
+            if (this.currentActiveTransactionID != id) {
+                System.out.println("transaction id does not match current transaction, command ignored");
+                return -3;
+            }
             return myMWRunnable.queryFlightPrice(id, flightNumber);
         } catch (DeadlockException e) {
             e.printStackTrace();
-            abort();
+            abort(0);
             return -2;
         }
     }
@@ -260,7 +283,10 @@ public class TransactionManager implements ResourceManager {
             if (!TCPServer.lm.Lock(id, CAR, LockManager.WRITE)) {
                 return false;
             }
-            this.currentActiveTransactionID = id;
+            if (this.currentActiveTransactionID != id) {
+                System.out.println("transaction id does not match current transaction, command ignored");
+                return false;
+            }
             String undoCmd;
             if (myMWRunnable.isExistingCars(id, location)) {
                 undoCmd = "undoAddCars," + id + "," + location + "," + myMWRunnable.queryCars(id, location) + "," + myMWRunnable.queryCarsPrice(id, location) + "," + myMWRunnable.queryCarsReserved(id, location);
@@ -280,7 +306,7 @@ public class TransactionManager implements ResourceManager {
             return myMWRunnable.addCars(id, location, numCars, carPrice);
         } catch (DeadlockException e) {
             e.printStackTrace();
-            abort();
+            abort(0);
             return false;
         }
     }
@@ -292,7 +318,10 @@ public class TransactionManager implements ResourceManager {
             if (!TCPServer.lm.Lock(id, CAR, LockManager.WRITE)) {
                 return false;
             }
-            this.currentActiveTransactionID = id;
+            if (this.currentActiveTransactionID != id) {
+                System.out.println("transaction id does not match current transaction, command ignored");
+                return false;
+            }
             if (myMWRunnable.isExistingCars(id, location)) {
                 String undoCmd = "undoAddCars," + id + "," + location + "," + myMWRunnable.queryCars(id, location) + "," + myMWRunnable.queryCarsPrice(id, location) + "," + myMWRunnable.queryCarsReserved(id, location);
                 undoStack.add(undoCmd);
@@ -307,7 +336,7 @@ public class TransactionManager implements ResourceManager {
             return myMWRunnable.deleteCars(id, location);
         } catch (DeadlockException e) {
             e.printStackTrace();
-            abort();
+            abort(0);
             return false;
         }
     }
@@ -319,11 +348,14 @@ public class TransactionManager implements ResourceManager {
             if (!TCPServer.lm.Lock(id, CAR, LockManager.READ)) {
                 return -2;
             }
-            this.currentActiveTransactionID = id;
+            if (this.currentActiveTransactionID != id) {
+                System.out.println("transaction id does not match current transaction, command ignored");
+                return -3;
+            }
             return myMWRunnable.queryCars(id, location);
         } catch (DeadlockException e) {
             e.printStackTrace();
-            abort();
+            abort(0);
             return -1;
         }
     }
@@ -335,11 +367,14 @@ public class TransactionManager implements ResourceManager {
             if (!TCPServer.lm.Lock(id, CAR, LockManager.READ)) {
                 return -2;
             }
-            this.currentActiveTransactionID = id;
+            if (this.currentActiveTransactionID != id) {
+                System.out.println("transaction id does not match current transaction, command ignored");
+                return -3;
+            }
             return myMWRunnable.queryCarsPrice(id, location);
         } catch (DeadlockException e) {
             e.printStackTrace();
-            abort();
+            abort(0);
             return -2;
         }
     }
@@ -351,7 +386,10 @@ public class TransactionManager implements ResourceManager {
             if (!TCPServer.lm.Lock(id, ROOM, LockManager.WRITE)) {
                 return false;
             }
-            this.currentActiveTransactionID = id;
+            if (this.currentActiveTransactionID != id) {
+                System.out.println("transaction id does not match current transaction, command ignored");
+                return false;
+            }
             String undoCmd;
             if (myMWRunnable.isExistingRooms(id, location)) {
                 undoCmd = "undoAddRooms," + id + "," + location + "," + myMWRunnable.queryRooms(id, location) + "," + myMWRunnable.queryRoomsPrice(id, location) + "," + myMWRunnable.queryRoomsReserved(id, location);
@@ -370,7 +408,7 @@ public class TransactionManager implements ResourceManager {
             return myMWRunnable.addRooms(id, location, numRooms, roomPrice);
         } catch (DeadlockException e) {
             e.printStackTrace();
-            abort();
+            abort(0);
             return false;
         }
     }
@@ -382,7 +420,10 @@ public class TransactionManager implements ResourceManager {
             if (!TCPServer.lm.Lock(id, ROOM, LockManager.WRITE)) {
                 return false;
             }
-            this.currentActiveTransactionID = id;
+            if (this.currentActiveTransactionID != id) {
+                System.out.println("transaction id does not match current transaction, command ignored");
+                return false;
+            }
             if (myMWRunnable.isExistingRooms(id, location)) {
                 String undoCmd = "undoAddRooms," + id + "," + location + "," + myMWRunnable.queryRooms(id, location) + "," + myMWRunnable.queryRoomsPrice(id, location) + "," + myMWRunnable.queryRoomsReserved(id, location);
                 undoStack.add(undoCmd);
@@ -397,7 +438,7 @@ public class TransactionManager implements ResourceManager {
             return myMWRunnable.deleteRooms(id, location);
         } catch (DeadlockException e) {
             e.printStackTrace();
-            abort();
+            abort(0);
             return false;
         }
     }
@@ -409,11 +450,14 @@ public class TransactionManager implements ResourceManager {
             if (!TCPServer.lm.Lock(id, ROOM, LockManager.READ)) {
                 return -2;
             }
-            this.currentActiveTransactionID = id;
+            if (this.currentActiveTransactionID != id) {
+                System.out.println("transaction id does not match current transaction, command ignored");
+                return -3;
+            }
             return myMWRunnable.queryRooms(id, location);
         } catch (DeadlockException e) {
             e.printStackTrace();
-            abort();
+            abort(0);
             return -2;
         }
     }
@@ -425,11 +469,14 @@ public class TransactionManager implements ResourceManager {
             if (!TCPServer.lm.Lock(id, ROOM, LockManager.READ)) {
                 return -2;
             }
-            this.currentActiveTransactionID = id;
+            if (this.currentActiveTransactionID != id) {
+                System.out.println("transaction id does not match current transaction, command ignored");
+                return -3;
+            }
             return myMWRunnable.queryRoomsPrice(id, location);
         } catch (DeadlockException e) {
             e.printStackTrace();
-            abort();
+            abort(0);
             return -2;
         }
     }
@@ -441,7 +488,10 @@ public class TransactionManager implements ResourceManager {
             if (!(TCPServer.lm.Lock(id, CUSTOMER, LockManager.WRITE))) {
                 return -2;
             }
-            this.currentActiveTransactionID = id;
+            if (this.currentActiveTransactionID != id) {
+                System.out.println("transaction id does not match current transaction, command ignored");
+                return -3;
+            }
             int value = myMWRunnable.newCustomer(id);
 
             String undoCmd = "deleteCustomer," + id + "," + value;
@@ -458,7 +508,7 @@ public class TransactionManager implements ResourceManager {
             return value;
         } catch (DeadlockException e) {
 //            e.printStackTrace();
-            abort();
+            abort(0);
             return -2;
         }
     }
@@ -470,7 +520,10 @@ public class TransactionManager implements ResourceManager {
             if (!(TCPServer.lm.Lock(id, CUSTOMER, LockManager.WRITE))) {
                 return false;
             }
-            this.currentActiveTransactionID = id;
+            if (this.currentActiveTransactionID != id) {
+                System.out.println("transaction id does not match current transaction, command ignored");
+                return false;
+            }
             boolean success = myMWRunnable.newCustomerId(id, customerId);
             if (success) {
                 String undoCmd = "deleteCustomer," + id + "," + customerId;
@@ -487,7 +540,7 @@ public class TransactionManager implements ResourceManager {
             return success;
         } catch (DeadlockException e) {
 //            e.printStackTrace();
-            abort();
+            abort(0);
             return false;
         }
     }
@@ -499,7 +552,10 @@ public class TransactionManager implements ResourceManager {
             if (!(TCPServer.lm.Lock(id, CUSTOMER, LockManager.WRITE) && (TCPServer.lm.Lock(id, CAR, LockManager.WRITE) && TCPServer.lm.Lock(id, FLIGHT, LockManager.WRITE) && TCPServer.lm.Lock(id, ROOM, LockManager.WRITE)))) {
                 return false;
             }
-            this.currentActiveTransactionID = id;
+            if (this.currentActiveTransactionID != id) {
+                System.out.println("transaction id does not match current transaction, command ignored");
+                return false;
+            }
             Customer cust = ((Customer) myMWRunnable.readData(id, Customer.getKey(customerId)));
             if (cust == null) {
                 System.out.println("customer does not exist. failed to delete customer");
@@ -511,7 +567,7 @@ public class TransactionManager implements ResourceManager {
             return myMWRunnable.deleteCustomer(id, customerId);
         } catch (DeadlockException e) {
             e.printStackTrace();
-            abort();
+            abort(0);
             return false;
         }
     }
@@ -524,10 +580,14 @@ public class TransactionManager implements ResourceManager {
             if (!(TCPServer.lm.Lock(id, CUSTOMER, customerId))) {
                 return "can't get customer Info";
             }
+            if (this.currentActiveTransactionID != id) {
+                System.out.println("transaction id does not match current transaction, command ignored");
+                return "transaction ID does not match current transaction, command ignored";
+            }
             return myMWRunnable.queryCustomerInfo(id, customerId);
         } catch (DeadlockException e) {
             e.printStackTrace();
-            abort();
+            abort(0);
             return "can't get customer Info";
         }
     }
@@ -539,10 +599,14 @@ public class TransactionManager implements ResourceManager {
             if (!(TCPServer.lm.Lock(id, CUSTOMER, LockManager.WRITE) && TCPServer.lm.Lock(id, FLIGHT, LockManager.WRITE))) {
                 return false;
             }
+            if (this.currentActiveTransactionID != id) {
+                System.out.println("transaction id does not match current transaction, command ignored");
+                return false;
+            }
             undoStack.add("unreserveItem" + "," + id + "," + customerId + "," + Flight.getKey(flightNumber) + "," + flightNumber);
             return myMWRunnable.reserveFlight(id, customerId, flightNumber);
         } catch (DeadlockException e) {
-            abort();
+            abort(0);
             return false;
         }
     }
@@ -554,10 +618,14 @@ public class TransactionManager implements ResourceManager {
             if (!(TCPServer.lm.Lock(id, CUSTOMER, LockManager.WRITE) && TCPServer.lm.Lock(id, CAR, LockManager.WRITE))) {
                 return false;
             }
+            if (this.currentActiveTransactionID != id) {
+                System.out.println("transaction id does not match current transaction, command ignored");
+                return false;
+            }
             undoStack.add("unreserveItem" + "," + id + "," + customerId + "," + Car.getKey(location) + "," + location);
             return myMWRunnable.reserveCar(id, customerId, location);
         } catch (DeadlockException e) {
-            abort();
+            abort(0);
             return false;
         }
     }
@@ -569,10 +637,14 @@ public class TransactionManager implements ResourceManager {
             if (!(TCPServer.lm.Lock(id, CUSTOMER, LockManager.WRITE) && TCPServer.lm.Lock(id, ROOM, LockManager.WRITE))) {
                 return false;
             }
+            if (this.currentActiveTransactionID != id) {
+                System.out.println("transaction id does not match current transaction, command ignored");
+                return false;
+            }
             undoStack.add("unreserveItem" + "," + id + "," + customerId + "," + Room.getKey(location) + "," + location);
             return myMWRunnable.reserveRoom(id, customerId, location);
         } catch (DeadlockException e) {
-            abort();
+            abort(0);
             return false;
         }
     }
@@ -587,8 +659,12 @@ public class TransactionManager implements ResourceManager {
             TCPServer.lm.Lock(id, ROOM, LockManager.WRITE))) {
                 return false;
             }
+            if (this.currentActiveTransactionID != id) {
+                System.out.println("transaction id does not match current transaction, command ignored");
+                return false;
+            }
         } catch (DeadlockException e) {
-            abort();
+            abort(0);
             return false;
         }
 
@@ -616,8 +692,8 @@ public class TransactionManager implements ResourceManager {
             }
         }
 
-        if (isSuccessfulReservation) commit();
-        else abort();
+        if (isSuccessfulReservation) commit(0);
+        else abort(0);
         return isSuccessfulReservation;
     }
 

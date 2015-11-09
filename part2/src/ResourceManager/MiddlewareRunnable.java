@@ -309,13 +309,13 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                         break;
                     case 23:
                         if (tm.start()) {
-                            toClient.println("transaction started");
+                            toClient.println("transaction started with XID: " + tm.getCurrentActiveTransactionID());
                         }
                         else toClient.println("an existing transaction is currently active");
                         break;
                     case 24:
                         if (tm.isInTransaction()) {
-                            if (tm.abort()) {
+                            if (tm.abort(0)) {
                                 toClient.println("transaction successfully aborted");
                                 System.out.println("transaction aborted");
                             } else {
@@ -328,7 +328,7 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                         }
                         break;
                     case 25:
-                        if (tm.commit()) {
+                        if (tm.commit(0)) {
                             toClient.println("transaction successfully committed");
                         } else toClient.println("transaction commit error, transaction aborted");
                         break;
@@ -1151,7 +1151,7 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
             TCPServer.lm.Lock(id, localTM.CAR, LockManager.WRITE);
             TCPServer.lm.Lock(id, localTM.ROOM, LockManager.WRITE);
         } catch (DeadlockException e) {
-            localTM.abort();
+            localTM.abort(0);
             return false;
         }
 
@@ -1179,8 +1179,8 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
             }
         }
 
-        if (isSuccessfulReservation) localTM.commit();
-        else localTM.abort();
+        if (isSuccessfulReservation) localTM.commit(0);
+        else localTM.abort(0);
         TCPServer.lm.UnlockAll(id);
         return isSuccessfulReservation;
     }
