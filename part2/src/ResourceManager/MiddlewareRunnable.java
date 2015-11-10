@@ -332,6 +332,13 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                             toClient.println("transaction successfully committed");
                         } else toClient.println("transaction commit error, transaction aborted");
                         break;
+                    case 66:
+
+                        toFlight.println("shutdown");
+                        toCar.println("shutdown");
+                        toRoom.println("shutdown");
+                        toClient.println("true");
+                        System.exit(0);
                     default:
                         toClient.println("ERROR :  Command " + cmdWords[0] + " not supported");
                         break;
@@ -407,6 +414,8 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
             return 24;
         else if (cmdWords[0].compareToIgnoreCase("commit") == 0)
             return 25;
+        else if (cmdWords[0].compareToIgnoreCase("shutdown") == 0)
+            return 66;
         else
             choice=-1;
         return choice;

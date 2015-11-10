@@ -323,6 +323,8 @@ public class ResourceManagerRunnable implements Runnable, ResourceManager {
                             if (success) toClient.println("true");
                             else toClient.println("false");
                             break;
+                        case 66:
+                            System.exit(0);
                         default:
                             toClient.println("ERROR :  Command " + cmdWords[0] + " not supported");
                             break;
@@ -407,6 +409,8 @@ public class ResourceManagerRunnable implements Runnable, ResourceManager {
             choice = 32;
         else if (cmdWords[0].compareToIgnoreCase("decreasereservableitemcount") == 0)
             choice = 33;
+        else if (cmdWords[0].compareToIgnoreCase("shutdown") == 0 )
+            choice = 66;
         else
         choice = -1;
         return choice;
