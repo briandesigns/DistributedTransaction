@@ -602,7 +602,8 @@ public class Client {
                     toMW.println("shutdown");
                     try {
                         if(fromMW.readLine().toLowerCase().contains("true"))
-                            System.out.println("whole system down");
+                            System.out.println("Reservation System shutdown successful");
+                        else System.out.println("cannot shutdown system due to existing active transactions");
                         break;
                     } catch (IOException e) {
                             e.printStackTrace();

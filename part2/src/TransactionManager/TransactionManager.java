@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Vector;
-//todo: shutdowns
+
 public class TransactionManager implements ResourceManager {
     public static RMHashtable transactionTable;
     public ArrayList<Customer> customers;
@@ -34,6 +34,8 @@ public class TransactionManager implements ResourceManager {
     {
         transactionTable = new RMHashtable();
     }
+
+
 
     private void setInTransaction(boolean decision) {
         this.inTransaction = decision;
@@ -76,6 +78,10 @@ public class TransactionManager implements ResourceManager {
         this.myMWRunnable = myMWRunnable;
         this.undoStack = new ArrayList<String>();
         this.customers = new ArrayList<Customer>();
+    }
+
+    public static synchronized boolean noActiveTransactions() {
+        return transactionTable.isEmpty();
     }
 
     private static synchronized int generateUniqueXID() {
@@ -138,6 +144,8 @@ public class TransactionManager implements ResourceManager {
             setInTransaction(true);
             currentActiveTransactionID = generateUniqueXID();
             System.out.println("transaction started with XID: " + currentActiveTransactionID);
+            Boolean[] RMInvolved = {false, false, false, false};
+            TransactionManager.transactionTable.put(currentActiveTransactionID, RMInvolved);
             return true;
         } else {
             System.out.println("nothing to start, already in transaction");

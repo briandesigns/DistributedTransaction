@@ -333,12 +333,16 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                         } else toClient.println("transaction commit error, transaction aborted");
                         break;
                     case 66:
-
-                        toFlight.println("shutdown");
-                        toCar.println("shutdown");
-                        toRoom.println("shutdown");
-                        toClient.println("true");
-                        System.exit(0);
+                        if(TransactionManager.noActiveTransactions()) {
+                            toFlight.println("shutdown");
+                            toCar.println("shutdown");
+                            toRoom.println("shutdown");
+                            toClient.println("true");
+                            System.exit(0);
+                        } else {
+                            toClient.println("false");
+                        }
+                        break;
                     default:
                         toClient.println("ERROR :  Command " + cmdWords[0] + " not supported");
                         break;
