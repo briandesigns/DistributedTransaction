@@ -521,7 +521,7 @@ public class Client {
                         if (fromMW.readLine().contains("true"))
                             Trace.info("MW reserveItinerary successful");
                         else
-                            Trace.info("MW reserveItinerary");
+                            Trace.info("MW reserveItinerary failed");
                     }
                     catch(Exception e) {
                         e.printStackTrace();

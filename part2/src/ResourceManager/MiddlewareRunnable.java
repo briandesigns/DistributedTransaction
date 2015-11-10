@@ -770,7 +770,6 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
         else return false;
     }
 
-    //todo: reserveitineray doesnt work
     // Delete cars from a location.
     @Override
     public boolean deleteCars(int id, String location) {
@@ -1159,43 +1158,42 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
         TransactionManager localTM = new TransactionManager(MiddlewareRunnable.this);
         localTM.start();
         try {
-            TCPServer.lm.Lock(id, localTM.CUSTOMER, LockManager.WRITE);
-            TCPServer.lm.Lock(id, localTM.FLIGHT, LockManager.WRITE);
-            TCPServer.lm.Lock(id, localTM.CAR, LockManager.WRITE);
-            TCPServer.lm.Lock(id, localTM.ROOM, LockManager.WRITE);
+            TCPServer.lm.Lock(localTM.getCurrentActiveTransactionID(), localTM.CUSTOMER, LockManager.WRITE);
+            TCPServer.lm.Lock(localTM.getCurrentActiveTransactionID(), localTM.FLIGHT, LockManager.WRITE);
+            TCPServer.lm.Lock(localTM.getCurrentActiveTransactionID(), localTM.CAR, LockManager.WRITE);
+            TCPServer.lm.Lock(localTM.getCurrentActiveTransactionID(), localTM.ROOM, LockManager.WRITE);
+            Iterator it = flightNumbers.iterator();
+
+            boolean isSuccessfulReservation = true;
+            while (it.hasNext()) {
+                try {
+                    if(!localTM.reserveFlight(localTM.getCurrentActiveTransactionID(), customerId, getInt(it.next()))) {
+                        isSuccessfulReservation = false;
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            if (car) {
+                if(!localTM.reserveCar(localTM.getCurrentActiveTransactionID(), customerId, location)) {
+                    isSuccessfulReservation = false;
+                }
+            }
+            if (room) {
+                if(!localTM.reserveRoom(localTM.getCurrentActiveTransactionID(), customerId, location)) {
+                    isSuccessfulReservation = false;
+                }
+            }
+
+            if (isSuccessfulReservation) localTM.commit();
+            else localTM.abort();
+            return isSuccessfulReservation;
         } catch (DeadlockException e) {
             localTM.abort();
             return false;
         }
 
 
-        Iterator it = flightNumbers.iterator();
-
-        boolean isSuccessfulReservation = true;
-        while (it.hasNext()) {
-            try {
-                if(!localTM.reserveFlight(id, customerId, getInt(it.next()))) {
-                    isSuccessfulReservation = false;
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        if (car) {
-            if(!localTM.reserveCar(id, customerId, location)) {
-                isSuccessfulReservation = false;
-            }
-        }
-        if (room) {
-            if(!localTM.reserveRoom(id, customerId, location)) {
-                isSuccessfulReservation = false;
-            }
-        }
-
-        if (isSuccessfulReservation) localTM.commit();
-        else localTM.abort();
-        TCPServer.lm.UnlockAll(id);
-        return isSuccessfulReservation;
     }
 
     @Override
@@ -1205,7 +1203,7 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
 
     public int getInt(Object temp) throws Exception {
         try {
-            return (new Integer((String)temp)).intValue();
+            return new Integer(temp.toString());
         }
         catch(Exception e) {
             throw e;
