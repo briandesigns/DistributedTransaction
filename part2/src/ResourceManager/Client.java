@@ -193,8 +193,12 @@ public class Client {
                         id = getInt(arguments.elementAt(1));
                         toMW.println("newCustomer," + id);
                         int customer = Integer.parseInt(fromMW.readLine());
-                        Trace.info("new customer id: " + customer);
-                        Trace.info("MW newCustomer successful");
+                        if (customer==-2) {
+                            Trace.info("MW newCustomer unsuccessful: failed to get lock");
+                        } else {
+                            Trace.info("new customer id: " + customer);
+                            Trace.info("MW newCustomer successful");
+                        }
                     } catch (NullPointerException e1) {
                         System.out.println("REQUEST FAILED: MW and RMs unavailable");
                     } catch (Exception e) {
@@ -572,7 +576,8 @@ public class Client {
 
                         boolean c = fromMW.readLine().contains("true");
                         System.out.println("new customer id: " + customer);
-                        Trace.info("MW newCustomerId successful");
+                        if (c) Trace.info("MW newCustomerId successful");
+                        else Trace.info("MW newCustomerId unsuccessful");
                     } catch (NullPointerException e1) {
                         System.out.println("REQUEST FAILED: MW and RMs unavailable");
                     } catch (Exception e) {

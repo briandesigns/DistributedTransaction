@@ -21,7 +21,7 @@ public class TransactionManager implements ResourceManager {
     private MiddlewareRunnable myMWRunnable;
     private boolean inTransaction = false;
     private Thread TTLCountDownThread;
-    private static final int TTL_MS = 120000;
+    private static final int TTL_MS = 60000;
     public static final String CAR = "car-";
     public static final String FLIGHT = "flight-";
     public static final String ROOM = "room-";
@@ -164,12 +164,12 @@ public class TransactionManager implements ResourceManager {
         stopTTLCountDown();
         setInTransaction(false);
         boolean result = undoAll();
+        System.out.println("txn: " + this.currentActiveTransactionID + " call ended and undoAll() successful:" + result);
         transactionTable.remove(this.currentActiveTransactionID);
         this.undoStack = new ArrayList<String>();
         this.customers = new ArrayList<Customer>();
         TCPServer.lm.UnlockAll(currentActiveTransactionID);
         currentActiveTransactionID = UNUSED_TRANSACTION_ID;
-        System.out.println("abort() call ended and undoAll() successful:" + result);
         return result;
     }
 
@@ -630,7 +630,7 @@ public class TransactionManager implements ResourceManager {
     public boolean reserveFlight(int id, int customerId, int flightNumber) {
         try {
             renewTTLCountDown();
-            if (!(TCPServer.lm.Lock(id, CUSTOMER+customerId, LockManager.WRITE) && TCPServer.lm.Lock(id, FLIGHT, LockManager.WRITE))) {
+            if (!(TCPServer.lm.Lock(id, CUSTOMER+customerId, LockManager.WRITE) && TCPServer.lm.Lock(id, FLIGHT+flightNumber, LockManager.WRITE))) {
                 return false;
             }
             if (this.currentActiveTransactionID != id) {
@@ -653,7 +653,7 @@ public class TransactionManager implements ResourceManager {
     public boolean reserveCar(int id, int customerId, String location) {
         try {
             renewTTLCountDown();
-            if (!(TCPServer.lm.Lock(id, CUSTOMER+customerId, LockManager.WRITE) && TCPServer.lm.Lock(id, CAR, LockManager.WRITE))) {
+            if (!(TCPServer.lm.Lock(id, CUSTOMER+customerId, LockManager.WRITE) && TCPServer.lm.Lock(id, CAR+location, LockManager.WRITE))) {
                 return false;
             }
             if (this.currentActiveTransactionID != id) {
@@ -676,7 +676,7 @@ public class TransactionManager implements ResourceManager {
     public boolean reserveRoom(int id, int customerId, String location) {
         try {
             renewTTLCountDown();
-            if (!(TCPServer.lm.Lock(id, CUSTOMER+customerId, LockManager.WRITE) && TCPServer.lm.Lock(id, ROOM, LockManager.WRITE))) {
+            if (!(TCPServer.lm.Lock(id, CUSTOMER+customerId, LockManager.WRITE) && TCPServer.lm.Lock(id, ROOM+location, LockManager.WRITE))) {
                 return false;
             }
             if (this.currentActiveTransactionID != id) {

@@ -920,6 +920,7 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
             TCPServer.lm.Lock(id, "customer-"+customerId,LockManager.WRITE);
         } catch (DeadlockException e) {
             e.printStackTrace();
+            tm.abort();
             return -2;
         }
         Customer cust = new Customer(customerId);
@@ -1053,6 +1054,7 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
                     return success;
 
                 } catch (DeadlockException e1) {
+                    tm.abort();
                     e1.printStackTrace();
                     return false;
                 }
