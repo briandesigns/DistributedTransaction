@@ -21,7 +21,7 @@ public class TransactionManager implements ResourceManager {
     private MiddlewareRunnable myMWRunnable;
     private boolean inTransaction = false;
     private Thread TTLCountDownThread;
-    private static final int TTL_MS = 20000;
+    private static final int TTL_MS = 120000;
     public static final String CAR = "car";
     public static final String FLIGHT = "flight";
     public static final String ROOM = "room";
