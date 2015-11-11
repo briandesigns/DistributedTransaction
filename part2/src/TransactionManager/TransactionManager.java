@@ -22,10 +22,10 @@ public class TransactionManager implements ResourceManager {
     private boolean inTransaction = false;
     private Thread TTLCountDownThread;
     private static final int TTL_MS = 120000;
-    public static final String CAR = "car";
-    public static final String FLIGHT = "flight";
-    public static final String ROOM = "room";
-    public static final String CUSTOMER = "customer";
+    public static final String CAR = "car-";
+    public static final String FLIGHT = "flight-";
+    public static final String ROOM = "room-";
+    public static final String CUSTOMER = "customer-";
 
     {
         transactionTable = new Hashtable<Integer, boolean[]>();
@@ -188,7 +188,7 @@ public class TransactionManager implements ResourceManager {
     public boolean addFlight(int id, int flightNumber, int numSeats, int flightPrice) {
         try {
             renewTTLCountDown();
-            if (!TCPServer.lm.Lock(id, FLIGHT, LockManager.WRITE)) {
+            if (!TCPServer.lm.Lock(id, FLIGHT+flightNumber, LockManager.WRITE)) {
                 return false;
             }
             if (this.currentActiveTransactionID != id) {
@@ -226,7 +226,7 @@ public class TransactionManager implements ResourceManager {
     public boolean deleteFlight(int id, int flightNumber) {
         try {
             renewTTLCountDown();
-            if (!TCPServer.lm.Lock(id, FLIGHT, LockManager.WRITE)) {
+            if (!TCPServer.lm.Lock(id, FLIGHT+flightNumber, LockManager.WRITE)) {
                 return false;
             }
             if (this.currentActiveTransactionID != id) {
@@ -259,7 +259,7 @@ public class TransactionManager implements ResourceManager {
     public int queryFlight(int id, int flightNumber) {
         try {
             renewTTLCountDown();
-            if (!TCPServer.lm.Lock(id, FLIGHT, LockManager.READ)) {
+            if (!TCPServer.lm.Lock(id, FLIGHT+flightNumber, LockManager.READ)) {
                 return -2;
             }
             if (this.currentActiveTransactionID != id) {
@@ -280,7 +280,7 @@ public class TransactionManager implements ResourceManager {
     public int queryFlightPrice(int id, int flightNumber) {
         try {
             renewTTLCountDown();
-            if (!TCPServer.lm.Lock(id, FLIGHT, LockManager.READ)) {
+            if (!TCPServer.lm.Lock(id, FLIGHT+flightNumber, LockManager.READ)) {
                 return -2;
             }
             if (this.currentActiveTransactionID != id) {
@@ -301,7 +301,7 @@ public class TransactionManager implements ResourceManager {
     public boolean addCars(int id, String location, int numCars, int carPrice) {
         try {
             renewTTLCountDown();
-            if (!TCPServer.lm.Lock(id, CAR, LockManager.WRITE)) {
+            if (!TCPServer.lm.Lock(id, CAR+location, LockManager.WRITE)) {
                 return false;
             }
             if (this.currentActiveTransactionID != id) {
@@ -338,7 +338,7 @@ public class TransactionManager implements ResourceManager {
     public boolean deleteCars(int id, String location) {
         try {
             renewTTLCountDown();
-            if (!TCPServer.lm.Lock(id, CAR, LockManager.WRITE)) {
+            if (!TCPServer.lm.Lock(id, CAR+location, LockManager.WRITE)) {
                 return false;
             }
             if (this.currentActiveTransactionID != id) {
@@ -370,7 +370,7 @@ public class TransactionManager implements ResourceManager {
     public int queryCars(int id, String location) {
         try {
             renewTTLCountDown();
-            if (!TCPServer.lm.Lock(id, CAR, LockManager.READ)) {
+            if (!TCPServer.lm.Lock(id, CAR+location, LockManager.READ)) {
                 return -2;
             }
             if (this.currentActiveTransactionID != id) {
@@ -390,7 +390,7 @@ public class TransactionManager implements ResourceManager {
     public int queryCarsPrice(int id, String location) {
         try {
             renewTTLCountDown();
-            if (!TCPServer.lm.Lock(id, CAR, LockManager.READ)) {
+            if (!TCPServer.lm.Lock(id, CAR+location, LockManager.READ)) {
                 return -2;
             }
             if (this.currentActiveTransactionID != id) {
@@ -411,7 +411,7 @@ public class TransactionManager implements ResourceManager {
     public boolean addRooms(int id, String location, int numRooms, int roomPrice) {
         try {
             renewTTLCountDown();
-            if (!TCPServer.lm.Lock(id, ROOM, LockManager.WRITE)) {
+            if (!TCPServer.lm.Lock(id, ROOM+location, LockManager.WRITE)) {
                 return false;
             }
             if (this.currentActiveTransactionID != id) {
@@ -446,7 +446,7 @@ public class TransactionManager implements ResourceManager {
     public boolean deleteRooms(int id, String location) {
         try {
             renewTTLCountDown();
-            if (!TCPServer.lm.Lock(id, ROOM, LockManager.WRITE)) {
+            if (!TCPServer.lm.Lock(id, ROOM+location, LockManager.WRITE)) {
                 return false;
             }
             if (this.currentActiveTransactionID != id) {
@@ -478,7 +478,7 @@ public class TransactionManager implements ResourceManager {
     public int queryRooms(int id, String location) {
         try {
             renewTTLCountDown();
-            if (!TCPServer.lm.Lock(id, ROOM, LockManager.READ)) {
+            if (!TCPServer.lm.Lock(id, ROOM+location, LockManager.READ)) {
                 return -2;
             }
             if (this.currentActiveTransactionID != id) {
@@ -499,7 +499,7 @@ public class TransactionManager implements ResourceManager {
     public int queryRoomsPrice(int id, String location) {
         try {
             renewTTLCountDown();
-            if (!TCPServer.lm.Lock(id, ROOM, LockManager.READ)) {
+            if (!TCPServer.lm.Lock(id, ROOM+location, LockManager.READ)) {
                 return -2;
             }
             if (this.currentActiveTransactionID != id) {
@@ -520,9 +520,6 @@ public class TransactionManager implements ResourceManager {
     public int newCustomer(int id) {
         try {
             renewTTLCountDown();
-            if (!(TCPServer.lm.Lock(id, CUSTOMER, LockManager.WRITE))) {
-                return -2;
-            }
             if (this.currentActiveTransactionID != id) {
                 System.out.println("transaction id does not match current transaction, command ignored");
                 TCPServer.lm.UnlockAll(id);
@@ -533,6 +530,9 @@ public class TransactionManager implements ResourceManager {
 
             String undoCmd = "deleteCustomer," + id + "," + value;
             undoStack.add(undoCmd);
+            if (!(TCPServer.lm.Lock(id, CUSTOMER+value, LockManager.WRITE))) {
+                return -2;
+            }
 
             boolean[] involvedRMs = transactionTable.get(id);
             if (involvedRMs == null) {
@@ -553,7 +553,7 @@ public class TransactionManager implements ResourceManager {
     public boolean newCustomerId(int id, int customerId) {
         try {
             renewTTLCountDown();
-            if (!(TCPServer.lm.Lock(id, CUSTOMER, LockManager.WRITE))) {
+            if (!(TCPServer.lm.Lock(id, CUSTOMER+customerId, LockManager.WRITE))) {
                 return false;
             }
             if (this.currentActiveTransactionID != id) {
@@ -586,9 +586,11 @@ public class TransactionManager implements ResourceManager {
     public boolean deleteCustomer(int id, int customerId) {
         try {
             renewTTLCountDown();
-            if (!(TCPServer.lm.Lock(id, CUSTOMER, LockManager.WRITE) && (TCPServer.lm.Lock(id, CAR, LockManager.WRITE) && TCPServer.lm.Lock(id, FLIGHT, LockManager.WRITE) && TCPServer.lm.Lock(id, ROOM, LockManager.WRITE)))) {
+            if (!(TCPServer.lm.Lock(id, CUSTOMER+customerId, LockManager.WRITE) )) {
                 return false;
             }
+            if (!myMWRunnable.getLockforCustomer(id, customerId)) return false;
+
             if (this.currentActiveTransactionID != id) {
                 System.out.println("transaction id does not match current transaction, command ignored");
                 TCPServer.lm.UnlockAll(id);
@@ -615,7 +617,7 @@ public class TransactionManager implements ResourceManager {
     public String queryCustomerInfo(int id, int customerId) {
         try {
             renewTTLCountDown();
-            if (!(TCPServer.lm.Lock(id, CUSTOMER, LockManager.READ))) {
+            if (!(TCPServer.lm.Lock(id, CUSTOMER+customerId, LockManager.READ))) {
                 return "can't get customer Info";
             }
             if (this.currentActiveTransactionID != id) {
@@ -635,7 +637,7 @@ public class TransactionManager implements ResourceManager {
     public boolean reserveFlight(int id, int customerId, int flightNumber) {
         try {
             renewTTLCountDown();
-            if (!(TCPServer.lm.Lock(id, CUSTOMER, LockManager.WRITE) && TCPServer.lm.Lock(id, FLIGHT, LockManager.WRITE))) {
+            if (!(TCPServer.lm.Lock(id, CUSTOMER+customerId, LockManager.WRITE) && TCPServer.lm.Lock(id, FLIGHT, LockManager.WRITE))) {
                 return false;
             }
             if (this.currentActiveTransactionID != id) {
@@ -658,7 +660,7 @@ public class TransactionManager implements ResourceManager {
     public boolean reserveCar(int id, int customerId, String location) {
         try {
             renewTTLCountDown();
-            if (!(TCPServer.lm.Lock(id, CUSTOMER, LockManager.WRITE) && TCPServer.lm.Lock(id, CAR, LockManager.WRITE))) {
+            if (!(TCPServer.lm.Lock(id, CUSTOMER+customerId, LockManager.WRITE) && TCPServer.lm.Lock(id, CAR, LockManager.WRITE))) {
                 return false;
             }
             if (this.currentActiveTransactionID != id) {
@@ -681,7 +683,7 @@ public class TransactionManager implements ResourceManager {
     public boolean reserveRoom(int id, int customerId, String location) {
         try {
             renewTTLCountDown();
-            if (!(TCPServer.lm.Lock(id, CUSTOMER, LockManager.WRITE) && TCPServer.lm.Lock(id, ROOM, LockManager.WRITE))) {
+            if (!(TCPServer.lm.Lock(id, CUSTOMER+customerId, LockManager.WRITE) && TCPServer.lm.Lock(id, ROOM, LockManager.WRITE))) {
                 return false;
             }
             if (this.currentActiveTransactionID != id) {
@@ -705,12 +707,24 @@ public class TransactionManager implements ResourceManager {
         try {
             renewTTLCountDown();
             if (!(
-                    TCPServer.lm.Lock(id, CUSTOMER, LockManager.WRITE) &&
-                            TCPServer.lm.Lock(id, FLIGHT, LockManager.WRITE) &&
-                            TCPServer.lm.Lock(id, CAR, LockManager.WRITE) &&
-                            TCPServer.lm.Lock(id, ROOM, LockManager.WRITE))) {
+                    TCPServer.lm.Lock(id, CUSTOMER+customerId, LockManager.WRITE) &&
+                            TCPServer.lm.Lock(id, CAR+location, LockManager.WRITE) &&
+                            TCPServer.lm.Lock(id, ROOM+location, LockManager.WRITE))) {
                 return false;
             }
+            Iterator it = flightNumbers.iterator();
+            boolean flightSuccess = true;
+            while (it.hasNext()) {
+                try {
+                    Object oFlightNumber = it.next();
+                    if (!TCPServer.lm.Lock(id, FLIGHT+myMWRunnable.getInt(oFlightNumber), LockManager.WRITE)) flightSuccess = false ;
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            if (!flightSuccess) return false;
+
             if (this.currentActiveTransactionID != id) {
                 System.out.println("transaction id does not match current transaction, command ignored");
                 TCPServer.lm.UnlockAll(id);
@@ -722,10 +736,10 @@ public class TransactionManager implements ResourceManager {
             int undoCmdCount = 0;
             boolean allSuccessfulReservation = true;
 
-            Iterator it = flightNumbers.iterator();
+            Iterator it2 = flightNumbers.iterator();
             while (it.hasNext()) {
                 try {
-                    Object oFlightNumber = it.next();
+                    Object oFlightNumber = it2.next();
                     if (myMWRunnable.reserveFlight(id, customerId, myMWRunnable.getInt(oFlightNumber))) {
                         undoStack.add("unreserveItem" + "," + id + "," + customerId + "," + Flight.getKey(myMWRunnable.getInt(oFlightNumber)) + "," + myMWRunnable.getInt(oFlightNumber));
                         undoCmdCount++;
