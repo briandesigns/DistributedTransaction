@@ -10,8 +10,8 @@ public class Client {
     private String mwHost;
     private int mwPort;
     private Socket mwSocket;
-    PrintWriter toMW;
-    BufferedReader fromMW;
+    protected PrintWriter toMW;
+    protected BufferedReader fromMW;
 
 
     public Client(String mwHost, int mwPort) {
