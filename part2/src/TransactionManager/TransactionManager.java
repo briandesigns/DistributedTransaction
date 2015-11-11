@@ -518,35 +518,28 @@ public class TransactionManager implements ResourceManager {
 
     @Override
     public int newCustomer(int id) {
-        try {
-            renewTTLCountDown();
-            if (this.currentActiveTransactionID != id) {
-                System.out.println("transaction id does not match current transaction, command ignored");
-                TCPServer.lm.UnlockAll(id);
-
-                return -3;
-            }
-            int value = myMWRunnable.newCustomer(id);
-
-            String undoCmd = "deleteCustomer," + id + "," + value;
-            undoStack.add(undoCmd);
-            if (!(TCPServer.lm.Lock(id, CUSTOMER+value, LockManager.WRITE))) {
-                return -2;
-            }
-
-            boolean[] involvedRMs = transactionTable.get(id);
-            if (involvedRMs == null) {
-                involvedRMs = new boolean[]{false, false, false, true};
-                transactionTable.put(id, involvedRMs);
-            } else {
-                involvedRMs[3] = true;
-            }
-            return value;
-        } catch (DeadlockException e) {
-//            e.printStackTrace();
-            abort();
+        renewTTLCountDown();
+        if (this.currentActiveTransactionID != id) {
+            System.out.println("transaction id does not match current transaction, command ignored");
+            TCPServer.lm.UnlockAll(id);
+            return -3;
+        }
+        int value = myMWRunnable.newCustomer(id);
+        if (value == -2) {
             return -2;
         }
+
+        String undoCmd = "deleteCustomer," + id + "," + value;
+        undoStack.add(undoCmd);
+
+        boolean[] involvedRMs = transactionTable.get(id);
+        if (involvedRMs == null) {
+            involvedRMs = new boolean[]{false, false, false, true};
+            transactionTable.put(id, involvedRMs);
+        } else {
+            involvedRMs[3] = true;
+        }
+        return value;
     }
 
     @Override

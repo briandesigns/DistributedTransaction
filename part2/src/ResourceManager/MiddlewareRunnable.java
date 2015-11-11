@@ -916,6 +916,12 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
         int customerId = Integer.parseInt(String.valueOf(id) +
                 String.valueOf(Calendar.getInstance().get(Calendar.MILLISECOND)) +
                 String.valueOf(Math.round(Math.random() * 100 + 1)));
+        try {
+            TCPServer.lm.Lock(id, "customer-"+customerId,LockManager.WRITE);
+        } catch (DeadlockException e) {
+            e.printStackTrace();
+            return -2;
+        }
         Customer cust = new Customer(customerId);
         writeData(id, cust.getKey(), cust);
         Trace.info("RM::newCustomer(" + id + ") OK: " + customerId);
