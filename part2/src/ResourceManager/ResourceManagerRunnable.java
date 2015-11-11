@@ -52,8 +52,6 @@ public class ResourceManagerRunnable implements Runnable, ResourceManager {
                 while (!(line = fromClient.readLine()).contains("END")) {
                     String[] cmdWords = line.split(",");
                     int choice = findChoice(cmdWords);
-                    Trace.info("command from middleware:" + line);
-                    Trace.info("number of tokens: " + cmdWords.length);
 
                     boolean success;
                     int value;
@@ -562,8 +560,6 @@ public class ResourceManagerRunnable implements Runnable, ResourceManager {
             // Doesn't exist; add it.
             Flight newObj = new Flight(flightNumber, numSeats, flightPrice);
             writeData(id, newObj.getKey(), newObj);
-            Trace.info("RM::addFlight(" + id + ", " + flightNumber
-                    + ", $" + flightPrice + ", " + numSeats + ") OK.");
         } else {
             curObj.setCount(numSeats);
             curObj.setReserved(numReserved);
@@ -572,9 +568,6 @@ public class ResourceManagerRunnable implements Runnable, ResourceManager {
             }
             //the line below should be redundant
             writeData(id, curObj.getKey(), curObj);
-            Trace.info("RM::addFlight(" + id + ", " + flightNumber
-                    + ", $" + flightPrice + ", " + numSeats + ") OK: "
-                    + "seats = " + curObj.getCount() + ", price = $" + flightPrice);
         }
         return (true);
     }
@@ -686,8 +679,6 @@ public class ResourceManagerRunnable implements Runnable, ResourceManager {
             // Doesn't exist; add it.
             Car newObj = new Car(location, numCars, carPrice);
             writeData(id, newObj.getKey(), newObj);
-            Trace.info("RM::addCars(" + id + ", " + location
-                    + ", $" + carPrice + ", " + numCars + ") OK.");
         } else {
             curObj.setCount(numCars);
             curObj.setReserved(numReserved);
@@ -696,9 +687,6 @@ public class ResourceManagerRunnable implements Runnable, ResourceManager {
             }
             //the line below should be redundant
             writeData(id, curObj.getKey(), curObj);
-            Trace.info("RM::addCars(" + id + ", " + location
-                    + ", $" + carPrice + ", " + numCars + ") OK: "
-                    + "cars = " + curObj.getCount() + ", price = $" + carPrice);
         }
         return (true);
     }
@@ -776,8 +764,6 @@ public class ResourceManagerRunnable implements Runnable, ResourceManager {
             // Doesn't exist; add it.
             Room newObj = new Room(location, numRooms, roomPrice);
             writeData(id, newObj.getKey(), newObj);
-            Trace.info("RM::addRooms(" + id + ", " + location
-                    + ", $" + roomPrice + ", " + numRooms + ") OK.");
         } else {
             curObj.setCount(numRooms);
             curObj.setReserved(numReserved);
@@ -786,9 +772,6 @@ public class ResourceManagerRunnable implements Runnable, ResourceManager {
             }
             //the line below should be redundant
             writeData(id, curObj.getKey(), curObj);
-            Trace.info("RM::addRooms(" + id + ", " + location
-                    + ", $" + roomPrice + ", " + numRooms + ") OK: "
-                    + "rooms = " + curObj.getCount() + ", price = $" + roomPrice);
         }
         return (true);
     }

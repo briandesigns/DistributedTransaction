@@ -200,7 +200,6 @@ public class TransactionManager implements ResourceManager {
             String undoCmd;
             if (myMWRunnable.isExistingFlight(id, flightNumber)) {
                 undoCmd = "undoAddFlight," + id + "," + flightNumber + "," + myMWRunnable.queryFlight(id, flightNumber) + "," + myMWRunnable.queryFlightPrice(id, flightNumber) + "," + myMWRunnable.queryFlightReserved(id, flightNumber);
-                System.out.println("just built undoCmd:" + undoCmd);
             } else {
                 undoCmd = "deleteFlight," + id + "," + flightNumber;
             }
@@ -424,7 +423,6 @@ public class TransactionManager implements ResourceManager {
             String undoCmd;
             if (myMWRunnable.isExistingRooms(id, location)) {
                 undoCmd = "undoAddRooms," + id + "," + location + "," + myMWRunnable.queryRooms(id, location) + "," + myMWRunnable.queryRoomsPrice(id, location) + "," + myMWRunnable.queryRoomsReserved(id, location);
-                System.out.println("just built undoCmd:" + undoCmd);
             } else {
                 undoCmd = "deleteRooms," + id + "," + location;
             }
@@ -534,7 +532,6 @@ public class TransactionManager implements ResourceManager {
             int value = myMWRunnable.newCustomer(id);
 
             String undoCmd = "deleteCustomer," + id + "," + value;
-            System.out.println("just built undoCmd:" + undoCmd);
             undoStack.add(undoCmd);
 
             boolean[] involvedRMs = transactionTable.get(id);
@@ -752,14 +749,12 @@ public class TransactionManager implements ResourceManager {
                 } else allSuccessfulReservation = false;
             }
 
-            System.out.println("stacksize:" + undoStack.size() + "| cmdCount:" + undoCmdCount);
             if (allSuccessfulReservation) {
                 return true;
             }
             else {
                 int stopIndex = undoStack.size() - undoCmdCount;
                 for (int i = undoStack.size() - 1; i >= stopIndex; i--) {
-                    System.out.println("=======================at index : "  + i + "====================");
                     executeUndoLine(undoStack.get(i));
                     undoStack.remove(i);
                 }

@@ -513,7 +513,6 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
         boolean isSuccessfulReservation = false;
         int itemPrice = -1;
         if (key.contains("car-")) {
-            Trace.info("got here");
             toCar.println("increaseReservableItemCount," + id + "," + key + "," + "1");
             if (fromCar.readLine().contains("true")) {
                 isSuccessfulReservation = true;
@@ -571,7 +570,6 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
         boolean isSuccessfulReservation = false;
         int itemPrice = -1;
         if (key.contains("car-")) {
-            Trace.info("got here");
             toCar.println("reserveCar," + id + "," + customerId + "," + location);
             if (fromCar.readLine().contains("true")) {
                 isSuccessfulReservation = true;
@@ -1028,9 +1026,6 @@ public class MiddlewareRunnable implements Runnable, ResourceManager {
         for (Enumeration e = reservationHT.keys(); e.hasMoreElements(); ) {
             String reservedKey = (String) (e.nextElement());
             ReservedItem reservedItem = targetCust.getReservedItem(reservedKey);
-            Trace.info("RM::deleteCustomer(" + id + ", " + customerId + "): "
-                    + "deleting " + reservedItem.getCount() + " reservations "
-                    + "for item " + reservedItem.getKey());
             if(reservedItem.getKey().contains("flight-")) {
                 toFlight.println("decreaseReservableItemCount," + id + "," + reservedItem.getKey() + "," + reservedItem.getCount());
                 try {

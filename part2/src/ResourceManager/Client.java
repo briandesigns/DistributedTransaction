@@ -42,7 +42,10 @@ public class Client {
             Client client = new Client(mwHost, mwPort);
             client.run();
 
-        } catch(Exception e) {
+
+        } catch (NullPointerException e1) {
+            System.out.println("Sorry: MiddleWare and RMs currently unavailable");
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -75,21 +78,19 @@ public class Client {
             try {
                 //read the next command
                 command = stdin.readLine();
-            }
-            catch (IOException io) {
+            } catch (IOException io) {
                 System.out.println("Unable to read from standard in");
                 System.exit(1);
             }
             //remove heading and trailing white space
             command = command.trim();
 
-            if(command.equals("")) continue;
+            if (command.equals("")) continue;
             arguments = parse(command);
 
 
-
             //decide which of the commands this was
-            switch(findChoice((String) arguments.elementAt(0))) {
+            switch (findChoice((String) arguments.elementAt(0))) {
 
                 case 1: //help section
                     if (arguments.size() == 1)   //command was "help"
@@ -122,8 +123,9 @@ public class Client {
                             Trace.info("MW addFlight successful");
                         else
                             Trace.info("MW addFlight failed");
-                    }
-                    catch(Exception e) {
+                    } catch (NullPointerException e1) {
+                        System.out.println("REQUEST FAILED: MW and RMs unavailable");
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                     break;
@@ -142,13 +144,14 @@ public class Client {
                         location = getString(arguments.elementAt(2));
                         numCars = getInt(arguments.elementAt(3));
                         price = getInt(arguments.elementAt(4));
-                        toMW.println("addCars," +id + "," + location + "," + numCars + "," + price);
+                        toMW.println("addCars," + id + "," + location + "," + numCars + "," + price);
                         if (fromMW.readLine().contains("true"))
                             Trace.info("MW addCars successful");
                         else
                             Trace.info("MW addCars failed");
-                    }
-                    catch(Exception e) {
+                    } catch (NullPointerException e1) {
+                        System.out.println("REQUEST FAILED: MW and RMs unavailable");
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                     break;
@@ -168,13 +171,14 @@ public class Client {
                         numRooms = getInt(arguments.elementAt(3));
                         price = getInt(arguments.elementAt(4));
 
-                        toMW.println("addRooms," +id + "," + location + "," + numRooms + "," + price);
+                        toMW.println("addRooms," + id + "," + location + "," + numRooms + "," + price);
                         if (fromMW.readLine().contains("true"))
                             Trace.info("MW addRooms successful");
                         else
                             Trace.info("MW addRooms failed");
-                    }
-                    catch(Exception e) {
+                    } catch (NullPointerException e1) {
+                        System.out.println("REQUEST FAILED: MW and RMs unavailable");
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                     break;
@@ -187,12 +191,13 @@ public class Client {
                     System.out.println("Adding a new ResourceManager.Customer using id: " + arguments.elementAt(1));
                     try {
                         id = getInt(arguments.elementAt(1));
-                        toMW.println("newCustomer,"+id);
+                        toMW.println("newCustomer," + id);
                         int customer = Integer.parseInt(fromMW.readLine());
                         Trace.info("new customer id: " + customer);
                         Trace.info("MW newCustomer successful");
-                    }
-                    catch(Exception e) {
+                    } catch (NullPointerException e1) {
+                        System.out.println("REQUEST FAILED: MW and RMs unavailable");
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                     break;
@@ -213,8 +218,9 @@ public class Client {
                             Trace.info("MW deleteFlight successful");
                         else
                             Trace.info("MW deleteFlight failed");
-                    }
-                    catch(Exception e) {
+                    } catch (NullPointerException e1) {
+                        System.out.println("REQUEST FAILED: MW and RMs unavailable");
+                    } catch (Exception e) {
                         System.out.println("EXCEPTION: ");
                         System.out.println(e.getMessage());
                         e.printStackTrace();
@@ -237,8 +243,9 @@ public class Client {
                             Trace.info("MW deleteCars successful");
                         else
                             Trace.info("cars could not be deleted");
-                    }
-                    catch(Exception e) {
+                    } catch (NullPointerException e1) {
+                        System.out.println("REQUEST FAILED: MW and RMs unavailable");
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                     break;
@@ -259,8 +266,9 @@ public class Client {
                             Trace.info("MW deleteRooms successful");
                         else
                             Trace.info("MW deleteRooms failed");
-                    }
-                    catch(Exception e) {
+                    } catch (NullPointerException e1) {
+                        System.out.println("REQUEST FAILED: MW and RMs unavailable");
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                     break;
@@ -281,8 +289,9 @@ public class Client {
                             Trace.info("MW deleteCustomer successful");
                         else
                             Trace.info("MW deleteCustomer failed");
-                    }
-                    catch(Exception e) {
+                    } catch (NullPointerException e1) {
+                        System.out.println("REQUEST FAILED: MW and RMs unavailable");
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                     break;
@@ -297,11 +306,12 @@ public class Client {
                     try {
                         id = getInt(arguments.elementAt(1));
                         flightNumber = getInt(arguments.elementAt(2));
-                        toMW.println("queryFlight," + id +"," +flightNumber);
+                        toMW.println("queryFlight," + id + "," + flightNumber);
                         int seats = Integer.parseInt(fromMW.readLine());
                         Trace.info("MW Number of seats available: " + seats);
-                    }
-                    catch(Exception e) {
+                    } catch (NullPointerException e1) {
+                        System.out.println("REQUEST FAILED: MW and RMs unavailable");
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                     break;
@@ -316,12 +326,13 @@ public class Client {
                     try {
                         id = getInt(arguments.elementAt(1));
                         location = getString(arguments.elementAt(2));
-                        toMW.println("queryCars," + id +"," +location);
+                        toMW.println("queryCars," + id + "," + location);
 
                         numCars = Integer.parseInt(fromMW.readLine());
                         Trace.info("MW number of cars at this location: " + numCars);
-                    }
-                    catch(Exception e) {
+                    } catch (NullPointerException e1) {
+                        System.out.println("REQUEST FAILED: MW and RMs unavailable");
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                     break;
@@ -336,11 +347,12 @@ public class Client {
                     try {
                         id = getInt(arguments.elementAt(1));
                         location = getString(arguments.elementAt(2));
-                        toMW.println("queryRooms," + id +"," +location);
-                        numRooms= Integer.parseInt(fromMW.readLine());
+                        toMW.println("queryRooms," + id + "," + location);
+                        numRooms = Integer.parseInt(fromMW.readLine());
                         Trace.info("MW number of rooms at this location: " + numRooms);
-                    }
-                    catch(Exception e) {
+                    } catch (NullPointerException e1) {
+                        System.out.println("REQUEST FAILED: MW and RMs unavailable");
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                     break;
@@ -356,11 +368,12 @@ public class Client {
                         id = getInt(arguments.elementAt(1));
                         int customer = getInt(arguments.elementAt(2));
 
-                        toMW.println("queryCustomerInfo," +id +","+ customer);
+                        toMW.println("queryCustomerInfo," + id + "," + customer);
                         String bill = fromMW.readLine();
                         Trace.info("MW ResourceManager.Customer info: " + bill);
-                    }
-                    catch(Exception e) {
+                    } catch (NullPointerException e1) {
+                        System.out.println("REQUEST FAILED: MW and RMs unavailable");
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                     break;
@@ -375,11 +388,12 @@ public class Client {
                     try {
                         id = getInt(arguments.elementAt(1));
                         flightNumber = getInt(arguments.elementAt(2));
-                        toMW.println("queryFlightPrice," +id+","+flightNumber);
+                        toMW.println("queryFlightPrice," + id + "," + flightNumber);
                         price = Integer.parseInt(fromMW.readLine());
                         Trace.info("MW Price of a seat: " + price);
-                    }
-                    catch(Exception e) {
+                    } catch (NullPointerException e1) {
+                        System.out.println("REQUEST FAILED: MW and RMs unavailable");
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                     break;
@@ -394,11 +408,12 @@ public class Client {
                     try {
                         id = getInt(arguments.elementAt(1));
                         location = getString(arguments.elementAt(2));
-                        toMW.println("queryCarsPrice," +id+","+location);
+                        toMW.println("queryCarsPrice," + id + "," + location);
                         price = Integer.parseInt(fromMW.readLine());
                         Trace.info("MW Price of a car at this location: " + price);
-                    }
-                    catch(Exception e) {
+                    } catch (NullPointerException e1) {
+                        System.out.println("REQUEST FAILED: MW and RMs unavailable");
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                     break;
@@ -413,12 +428,13 @@ public class Client {
                     try {
                         id = getInt(arguments.elementAt(1));
                         location = getString(arguments.elementAt(2));
-                        toMW.println("queryRoomsPrice," +id+","+location);
+                        toMW.println("queryRoomsPrice," + id + "," + location);
 
                         price = Integer.parseInt(fromMW.readLine());
                         Trace.info("MW Price of rooms at this location: " + price);
-                    }
-                    catch(Exception e) {
+                    } catch (NullPointerException e1) {
+                        System.out.println("REQUEST FAILED: MW and RMs unavailable");
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                     break;
@@ -435,13 +451,14 @@ public class Client {
                         id = getInt(arguments.elementAt(1));
                         int customer = getInt(arguments.elementAt(2));
                         flightNumber = getInt(arguments.elementAt(3));
-                        toMW.println("reserveFlight," +id +"," + customer + "," + flightNumber);
+                        toMW.println("reserveFlight," + id + "," + customer + "," + flightNumber);
                         if (fromMW.readLine().contains("true"))
                             Trace.info("MW reserveFlight successful");
                         else
                             Trace.info("MW reserveFlight failed");
-                    }
-                    catch(Exception e) {
+                    } catch (NullPointerException e1) {
+                        System.out.println("REQUEST FAILED: MW and RMs unavailable");
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                     break;
@@ -458,13 +475,14 @@ public class Client {
                         id = getInt(arguments.elementAt(1));
                         int customer = getInt(arguments.elementAt(2));
                         location = getString(arguments.elementAt(3));
-                        toMW.println("reserveCar," +id +","+customer+","+location);
+                        toMW.println("reserveCar," + id + "," + customer + "," + location);
                         if (fromMW.readLine().contains("true"))
                             Trace.info("MW reserveCar successful");
                         else
                             Trace.info("MW reserveCar failed");
-                    }
-                    catch(Exception e) {
+                    } catch (NullPointerException e1) {
+                        System.out.println("REQUEST FAILED: MW and RMs unavailable");
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                     break;
@@ -481,49 +499,51 @@ public class Client {
                         id = getInt(arguments.elementAt(1));
                         int customer = getInt(arguments.elementAt(2));
                         location = getString(arguments.elementAt(3));
-                        toMW.println("reserveRoom," +id +","+customer+","+location);
+                        toMW.println("reserveRoom," + id + "," + customer + "," + location);
                         if (fromMW.readLine().contains("true"))
                             Trace.info("MW reserveRoom successful");
                         else
                             Trace.info("MW reserveRoom failed");
-                    }
-                    catch(Exception e) {
+                    } catch (NullPointerException e1) {
+                        System.out.println("REQUEST FAILED: MW and RMs unavailable");
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                     break;
 
                 case 20:  //reserve an Itinerary
-                    if (arguments.size()<7) {
+                    if (arguments.size() < 7) {
                         wrongNumber();
                         break;
                     }
                     System.out.println("Reserving an Itinerary using id: " + arguments.elementAt(1));
                     System.out.println("ResourceManager.Customer id: " + arguments.elementAt(2));
-                    for (int i = 0; i<arguments.size()-6; i++)
+                    for (int i = 0; i < arguments.size() - 6; i++)
                         System.out.println("ResourceManager.Flight number" + arguments.elementAt(3 + i));
-                    System.out.println("Location for car/room booking: " + arguments.elementAt(arguments.size()-3));
-                    System.out.println("car to book?: " + arguments.elementAt(arguments.size()-2));
-                    System.out.println("room to book?: " + arguments.elementAt(arguments.size()-1));
+                    System.out.println("Location for car/room booking: " + arguments.elementAt(arguments.size() - 3));
+                    System.out.println("car to book?: " + arguments.elementAt(arguments.size() - 2));
+                    System.out.println("room to book?: " + arguments.elementAt(arguments.size() - 1));
                     try {
                         id = getInt(arguments.elementAt(1));
                         int customer = getInt(arguments.elementAt(2));
                         Vector flightNumbers = new Vector();
-                        for (int i = 0; i < arguments.size()-6; i++)
+                        for (int i = 0; i < arguments.size() - 6; i++)
                             flightNumbers.addElement(arguments.elementAt(3 + i));
-                        location = getString(arguments.elementAt(arguments.size()-3));
-                        car = getBoolean(arguments.elementAt(arguments.size()-2));
-                        room = getBoolean(arguments.elementAt(arguments.size()-1));
-                        String cmd = "reserveItinerary"+"," +flightNumbers.size()+"," +id +","+customer+",";
-                        for (int i = 0; i < arguments.size()-6; i++) {
-                            cmd = cmd + arguments.elementAt(3+i)+",";
+                        location = getString(arguments.elementAt(arguments.size() - 3));
+                        car = getBoolean(arguments.elementAt(arguments.size() - 2));
+                        room = getBoolean(arguments.elementAt(arguments.size() - 1));
+                        String cmd = "reserveItinerary" + "," + flightNumbers.size() + "," + id + "," + customer + ",";
+                        for (int i = 0; i < arguments.size() - 6; i++) {
+                            cmd = cmd + arguments.elementAt(3 + i) + ",";
                         }
-                        toMW.println(cmd+location+","+car+","+room);
+                        toMW.println(cmd + location + "," + car + "," + room);
                         if (fromMW.readLine().contains("true"))
                             Trace.info("MW reserveItinerary successful");
                         else
                             Trace.info("MW reserveItinerary failed");
-                    }
-                    catch(Exception e) {
+                    } catch (NullPointerException e1) {
+                        System.out.println("REQUEST FAILED: MW and RMs unavailable");
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                     break;
@@ -543,18 +563,19 @@ public class Client {
                         break;
                     }
                     System.out.println("Adding a new ResourceManager.Customer using id: "
-                            + arguments.elementAt(1)  +  " and cid "  + arguments.elementAt(2));
+                            + arguments.elementAt(1) + " and cid " + arguments.elementAt(2));
                     try {
                         id = getInt(arguments.elementAt(1));
                         int customer = getInt(arguments.elementAt(2));
 
-                        toMW.println("newCustomerId,"+id+","+customer);
+                        toMW.println("newCustomerId," + id + "," + customer);
 
                         boolean c = fromMW.readLine().contains("true");
                         System.out.println("new customer id: " + customer);
                         Trace.info("MW newCustomerId successful");
-                    }
-                    catch(Exception e) {
+                    } catch (NullPointerException e1) {
+                        System.out.println("REQUEST FAILED: MW and RMs unavailable");
+                    } catch (Exception e) {
                         System.out.println("EXCEPTION: ");
                         System.out.println(e.getMessage());
                         e.printStackTrace();
@@ -569,6 +590,8 @@ public class Client {
                     try {
                         toMW.println("start");
                         System.out.println(fromMW.readLine());
+                    } catch (NullPointerException e1) {
+                        System.out.println("REQUEST FAILED: MW and RMs unavailable");
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -581,6 +604,8 @@ public class Client {
                     try {
                         toMW.println("abort");
                         System.out.println(fromMW.readLine());
+                    } catch (NullPointerException e1) {
+                        System.out.println("REQUEST FAILED: MW and RMs unavailable");
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -593,6 +618,8 @@ public class Client {
                     try {
                         toMW.println("commit");
                         System.out.println(fromMW.readLine());
+                    } catch (NullPointerException e1) {
+                        System.out.println("REQUEST FAILED: MW and RMs unavailable");
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -601,12 +628,14 @@ public class Client {
                 case 66:
                     toMW.println("shutdown");
                     try {
-                        if(fromMW.readLine().toLowerCase().contains("true"))
+                        if (fromMW.readLine().toLowerCase().contains("true"))
                             System.out.println("Reservation System shutdown successful");
                         else System.out.println("cannot shutdown system due to existing active transactions");
                         break;
+                    } catch (NullPointerException e1) {
+                        System.out.println("REQUEST FAILED: MW and RMs unavailable");
                     } catch (IOException e) {
-                            e.printStackTrace();
+                        e.printStackTrace();
                     }
                 default:
                     System.out.println("The interface does not support this command.");
@@ -678,7 +707,7 @@ public class Client {
             return 24;
         else if (argument.compareToIgnoreCase("commit") == 0)
             return 25;
-        else if (argument.compareToIgnoreCase("shutdown") == 0 )
+        else if (argument.compareToIgnoreCase("shutdown") == 0)
             return 66;
         else
             return 666;
@@ -699,7 +728,7 @@ public class Client {
 
     public void listSpecific(String command) {
         System.out.print("Help on: ");
-        switch(findChoice(command)) {
+        switch (findChoice(command)) {
             case 1:
                 System.out.println("Help");
                 System.out.println("\nTyping help on the prompt gives a list of all the commands available.");
@@ -892,27 +921,24 @@ public class Client {
 
     public int getInt(Object temp) throws Exception {
         try {
-            return (new Integer((String)temp)).intValue();
-        }
-        catch(Exception e) {
+            return (new Integer((String) temp)).intValue();
+        } catch (Exception e) {
             throw e;
         }
     }
 
     public boolean getBoolean(Object temp) throws Exception {
         try {
-            return (new Boolean((String)temp)).booleanValue();
-        }
-        catch(Exception e) {
+            return (new Boolean((String) temp)).booleanValue();
+        } catch (Exception e) {
             throw e;
         }
     }
 
     public String getString(Object temp) throws Exception {
         try {
-            return (String)temp;
-        }
-        catch (Exception e) {
+            return (String) temp;
+        } catch (Exception e) {
             throw e;
         }
     }

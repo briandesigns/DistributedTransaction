@@ -82,7 +82,6 @@ public class LockManager {
 //                            //todo: does this actually remove it?
 //                            lockTable.remove(dataObj1);
 //                            lockTable.add(dataObj);
-                            System.out.println("got here");
                             Vector vect = this.lockTable.elements(dataObj);
                             for(int i = 0; i<vect.size(); i++) {
                                 DataObj dataObj1 = (DataObj)(vect.elementAt(i));
