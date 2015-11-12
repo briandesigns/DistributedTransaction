@@ -121,7 +121,7 @@
       <file leaf-file-name="b_5_response_times.csv" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/out/b_5_response_times.csv">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.8928962">
+            <state vertical-scroll-proportion="1.3306189">
               <caret line="3" column="17" selection-start-line="3" selection-start-column="8" selection-end-line="3" selection-end-column="17" />
               <folding />
             </state>
@@ -831,12 +831,12 @@
       <workItem from="1447187176327" duration="1515000" />
       <workItem from="1447197355979" duration="8992000" />
       <workItem from="1447213005159" duration="11905000" />
-      <workItem from="1447256014941" duration="30649000" />
+      <workItem from="1447256014941" duration="30716000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="216513000" />
+    <option name="totallyTimeSpent" value="216580000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -848,7 +848,7 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-1" y="30" width="1922" height="1051" extended-state="7" />
-    <editor active="true" />
+    <editor active="false" />
     <layout>
       <window_info id="Palette" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3258786" sideWeight="0.5" order="11" side_tool="false" content_ui="tabs" />
@@ -859,7 +859,7 @@
       <window_info id="Maven Projects" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32694355" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32055378" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
+      <window_info id="Terminal" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.32055378" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
       <window_info id="Designer" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.111821085" sideWeight="0.485623" order="4" side_tool="false" content_ui="combo" />
       <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
@@ -1301,7 +1301,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/out/b_5_response_times.csv">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.8928962">
+        <state vertical-scroll-proportion="1.3306189">
           <caret line="3" column="17" selection-start-line="3" selection-start-column="8" selection-end-line="3" selection-end-column="17" />
           <folding />
         </state>
